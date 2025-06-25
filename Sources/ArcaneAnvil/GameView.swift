@@ -63,50 +63,59 @@ struct GameView: View {
                 .font(.subheadline)
                 .foregroundColor(.gray)
             
-            HStack {
-                Text("Level: \(gameManager.currentLevel)")
-                Spacer()
-                VStack {
-                    Text("Score")
-                    Text("\(gameManager.score)")
-                        .contentTransition(.numericText(countsUp: true))
-                        .animation(.easeOut, value: gameManager.score)
-                }
-                Spacer()
-                Text("Target: \(gameManager.scoreTarget)")
-                Spacer()
-                Text("Moves: \(gameManager.movesRemaining)")
-            }
-            .font(.headline)
-            .padding(.horizontal)
+            gameStats
+        }
+    }
+    
+    private var gameStats: some View {
+        HStack {
+            Text("Level: \(gameManager.currentLevel)")
+            Spacer()
+            scoreView
+            Spacer()
+            Text("Target: \(gameManager.scoreTarget)")
+            Spacer()
+            Text("Moves: \(gameManager.movesRemaining)")
+        }
+        .font(.headline)
+        .padding(.horizontal)
+    }
+    
+    @ViewBuilder
+    private var scoreView: some View {
+        VStack {
+            Text("Score")
+            Text("\(gameManager.score)")
         }
     }
     
     private var gameGridView: some View {
-        Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-            ForEach(0..<gameBoard.width, id: \.self) { x in
-                GridRow {
-                    ForEach(0..<gameBoard.height, id: \.self) { y in
-                        let coord = Coordinate(x: x, y: y)
-                        if let rune = gameBoard.grid[x][y] {
-                            RuneView(rune: rune, size: runeFrameSize)
-                                .border(Color.yellow, width: selectedCoordinate == coord ? 3 : 0)
-                                .transition(.scale.animation(.spring(response: 0.3, dampingFraction: 0.6)))
-                                .onTapGesture {
-                                    HapticManager.shared.trigger(.selection)
-                                    runeTapped(at: coord)
-                                }
-                                .disabled(gameManager.gameState != .playing)
-                        } else {
-                            // Placeholder for an empty space
-                            Color.clear.frame(width: 40, height: 40)
+        GeometryReader { geometry in
+            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+                ForEach(0..<gameBoard.width, id: \.self) { x in
+                    GridRow {
+                        ForEach(0..<gameBoard.height, id: \.self) { y in
+                            let coord = Coordinate(x: x, y: y)
+                            if let rune = gameBoard.grid[x][y] {
+                                RuneView(rune: rune, size: runeFrameSize)
+                                    .border(Color.yellow, width: selectedCoordinate == coord ? 3 : 0)
+                                    .transition(.scale.animation(.spring(response: 0.3, dampingFraction: 0.6)))
+                                    .onTapGesture {
+                                        HapticManager.shared.trigger(.selection)
+                                        runeTapped(at: coord)
+                                    }
+                                    .disabled(gameManager.gameState != .playing)
+                            } else {
+                                // Placeholder for an empty space
+                                Color.clear.frame(width: 40, height: 40)
+                            }
                         }
                     }
                 }
             }
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(8)
         }
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(8)
     }
     
     @ViewBuilder
@@ -476,18 +485,17 @@ struct GameView: View {
         let numParticles = 10
         
         for _ in 0..<numParticles {
-            let id = UUID()
             let destination = CGPoint(
                 x: startPoint.x + CGFloat.random(in: -40...40),
                 y: startPoint.y + CGFloat.random(in: -40...40)
             )
             let duration = Double.random(in: 0.4...0.8)
             
-            let particle = RuneParticle(id: id, color: color, position: startPoint, destination: destination, duration: duration)
+            let particle = RuneParticle(color: color, position: startPoint, destination: destination, duration: duration)
             particles.append(particle)
             
             // Find the index of the newly added particle
-            if let index = particles.firstIndex(where: { $0.id == id }) {
+            if let index = particles.firstIndex(where: { $0.id == particle.id }) {
                 // Animate its movement and disappearance
                 withAnimation(.easeOut(duration: duration)) {
                     particles[index].position = destination
