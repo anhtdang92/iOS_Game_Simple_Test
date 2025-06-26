@@ -7,6 +7,8 @@ struct RuneParticle: Identifiable {
     var position: CGPoint
     let destination: CGPoint
     let duration: Double
+    let size: CGFloat
+    var opacity: Double
 }
 
 /// A struct to manage the data for a floating score text animation.
@@ -40,6 +42,7 @@ struct GameView: View {
                 .overlay(lightningOverlay)
                 .overlay(comboOverlay)
                 .overlay(shopOverlay)
+                .overlay(starterSelectionOverlay)
                 .overlay(floatingScoreOverlay)
                 .overlay(gameOverOverlay)
                 .overlay(particleOverlay)
@@ -51,41 +54,58 @@ struct GameView: View {
                 .padding()
         }
         .padding()
+        .background(Color(red: 0.1, green: 0.1, blue: 0.15).ignoresSafeArea())
     }
     
     private var gameHeader: some View {
         VStack {
             Text("Arcane Anvil")
-                .font(.largeTitle)
+                .font(.system(size: 48, weight: .bold, design: .serif))
+                .shadow(color: .blue.opacity(0.8), radius: 3, x: 2, y: 2)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.cyan, .white, .blue],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .padding(.bottom, 2)
+            
+            gameStats
             
             Text("High Score: \(gameManager.highScore)")
                 .font(.subheadline)
                 .foregroundColor(.gray)
-            
-            gameStats
+                .padding(.top, 5)
         }
+        .foregroundColor(.white)
     }
     
     private var gameStats: some View {
         HStack {
-            Text("Level: \(gameManager.currentLevel)")
             Spacer()
-            scoreView
+            statView(icon: "star.fill", value: "\(gameManager.score)", label: "Score")
             Spacer()
-            Text("Target: \(gameManager.scoreTarget)")
+            statView(icon: "target", value: "\(gameManager.scoreTarget)", label: "Target")
             Spacer()
-            Text("Moves: \(gameManager.movesRemaining)")
+            statView(icon: "arrow.up.circle.fill", value: "\(gameManager.currentLevel)", label: "Level")
+            Spacer()
+            statView(icon: "arrow.2.squarepath", value: "\(gameManager.movesRemaining)", label: "Moves")
+            Spacer()
         }
-        .font(.headline)
-        .padding(.horizontal)
+        .padding(.vertical, 5)
     }
     
-    @ViewBuilder
-    private var scoreView: some View {
-        VStack {
-            Text("Score")
-            Text("\(gameManager.score)")
+    private func statView(icon: String, value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(.yellow.opacity(0.8))
+            Text(value)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+            Text(label)
+                .font(.caption)
+                .textCase(.uppercase)
         }
     }
     
@@ -99,6 +119,8 @@ struct GameView: View {
                             if let rune = gameBoard.grid[x][y] {
                                 RuneView(rune: rune, size: runeFrameSize)
                                     .border(Color.yellow, width: selectedCoordinate == coord ? 3 : 0)
+                                    .scaleEffect(selectedCoordinate == coord ? 0.9 : 1.0)
+                                    .animation(.spring(response: 0.2, dampingFraction: 0.5), value: selectedCoordinate)
                                     .transition(.scale.animation(.spring(response: 0.3, dampingFraction: 0.6)))
                                     .onTapGesture {
                                         HapticManager.shared.trigger(.selection)
@@ -113,9 +135,24 @@ struct GameView: View {
                     }
                 }
             }
-            .background(Color.gray.opacity(0.2))
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.black.opacity(0.4)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
             .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 4)
+            )
+            .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.8))
+        .foregroundColor(.white)
+        .transition(.opacity.animation(.easeIn))
     }
     
     @ViewBuilder
@@ -125,7 +162,10 @@ struct GameView: View {
                 .font(.system(size: 40, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.5), radius: 3, x: 2, y: 2)
-                .transition(.asymmetric(insertion: .scale.animation(.spring(response: 0.4, dampingFraction: 0.5)), removal: .opacity))
+                .transition(.asymmetric(
+                    insertion: .scale.animation(.spring(response: 0.4, dampingFraction: 0.5)),
+                    removal: .opacity.animation(.easeOut(duration: 0.5)))
+                )
         }
     }
     
@@ -148,57 +188,180 @@ struct GameView: View {
                         Text(card.description)
                             .font(.body)
                         
-                        let cost = 10 // This should be a property on the card model later
                         Button(action: {
                             SoundManager.shared.playSound(.buyCard)
                             HapticManager.shared.trigger(.success)
                             gameManager.buyCard(card)
                         }) {
-                            Text("Buy (\(cost) Gold)")
+                            Text("Buy (\(card.cost) Gold)")
+                                .padding(10)
+                                .frame(maxWidth: .infinity)
+                                .background(gameManager.gold >= card.cost ? Color.blue : Color.gray)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
                         }
                         .font(.title2)
-                        .padding(10)
-                        .background(gameManager.gold >= cost ? Color.blue : Color.gray)
-                        .cornerRadius(10)
-                        .disabled(gameManager.gold < cost)
+                        .disabled(gameManager.gold < card.cost)
                     }
                     .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.black.opacity(0.5))
-                    .cornerRadius(15)
+                    .background(Color.black.opacity(0.4))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.blue.opacity(0.7), lineWidth: 2)
+                    )
+                    .shadow(color: .blue.opacity(0.3), radius: 5, x: 3, y: 3)
+                    .transition(.asymmetric(insertion: .scale, removal: .opacity))
                 }
+                .animation(.default, value: gameManager.shopSelection)
+                
+                Spacer()
+
+                if !gameManager.activeEnchantments.isEmpty {
+                    Text("Your Enchantments")
+                        .font(.title2)
+                        .padding(.top)
+                    
+                    ForEach(gameManager.activeEnchantments) { card in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(card.displayName)
+                                    .bold()
+                                Text(card.description)
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            VStack(spacing: 8) {
+                                Button("Sell (+\(card.cost / 2)G)") {
+                                    SoundManager.shared.playSound(.buttonClick)
+                                    gameManager.sellCard(card)
+                                }
+                                .font(.body)
+                                .padding(8)
+                                .background(Color.red.opacity(0.2))
+                                .cornerRadius(8)
+                                .foregroundColor(.red)
+                                
+                                if let upgradeCost = card.upgradeCost {
+                                    Button("Upgrade (\(upgradeCost)G)") {
+                                        gameManager.upgradeCard(card)
+                                    }
+                                    .font(.body)
+                                    .padding(8)
+                                    .background(gameManager.gold >= upgradeCost ? Color.green.opacity(0.3) : Color.gray.opacity(0.2))
+                                    .cornerRadius(8)
+                                    .foregroundColor(gameManager.gold >= upgradeCost ? .green : .gray)
+                                    .disabled(gameManager.gold < upgradeCost)
+                                } else {
+                                    Text("MAX LEVEL")
+                                        .font(.caption)
+                                        .bold()
+                                        .foregroundColor(.yellow)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.4))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
+                        .transition(.asymmetric(insertion: .scale, removal: .opacity))
+                    }
+                }
+                .animation(.default, value: gameManager.activeEnchantments)
                 
                 Spacer()
                 
-                Button("Next Level") {
-                    SoundManager.shared.playSound(.buttonClick)
-                    HapticManager.shared.trigger(.light)
-                    prepareNextLevel()
+                VStack(spacing: 20) {
+                    Button("Reroll (10 Gold)") {
+                        SoundManager.shared.playSound(.buttonClick)
+                        HapticManager.shared.trigger(.light)
+                        gameManager.rerollShop()
+                    }
+                    .font(.title2)
+                    .padding(10)
+                    .background(gameManager.gold < 10 ? Color.gray : Color.orange)
+                    .cornerRadius(10)
+                    .disabled(gameManager.gold < 10)
+
+                    Button("Next Level") {
+                        SoundManager.shared.playSound(.buttonClick)
+                        HapticManager.shared.trigger(.light)
+                        prepareNextLevel()
+                    }
+                    .font(.largeTitle)
+                    .padding()
                 }
-                .font(.title)
-                
-                Button("Continue") {
-                    SoundManager.shared.playSound(.buttonClick)
-                    HapticManager.shared.trigger(.light)
-                    prepareNextLevel()
-                }
-                .font(.largeTitle)
                 .padding()
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black.opacity(0.9))
             .foregroundColor(.white)
+            .transition(.opacity.animation(.easeIn))
+        }
+    }
+    
+    @ViewBuilder
+    private var starterSelectionOverlay: some View {
+        if gameManager.gameState == .choosingStarter {
+            VStack(spacing: 15) {
+                Text("Choose Your Path")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .padding(.bottom, 20)
+                
+                Text("Select your first enchantment to begin the run.")
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 20)
+                
+                ForEach(gameManager.starterSelection) { card in
+                    Button(action: {
+                        SoundManager.shared.playSound(.buttonClick)
+                        HapticManager.shared.trigger(.success)
+                        gameManager.selectStarter(card)
+                    }) {
+                        VStack(alignment: .leading) {
+                            Text(card.name)
+                                .font(.title2).bold()
+                            Text(card.description)
+                                .font(.body)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(15)
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black.opacity(0.95))
+            .foregroundColor(.white)
+            .transition(.opacity.animation(.easeIn))
         }
     }
     
     @ViewBuilder
     private var lightningOverlay: some View {
         if let animation = lightningAnimation, animation.isVisible {
-            LightningShape()
+            Rectangle()
+                .fill(Color.yellow)
+                .frame(height: 44)
+                .offset(y: CGFloat(animation.row - gameBoard.height / 2) * 44)
+                .blur(radius: 20)
+                .opacity(animation.isVisible ? 0.5 : 0)
+                .animation(.easeInOut(duration: 0.1), value: animation.isVisible)
+            
+            LightningShape(animatableData: animation.isVisible ? 1 : 0)
                 .stroke(Color.yellow, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .offset(y: CGFloat(animation.row - gameBoard.height / 2) * 44 + 22)
-                .transition(.asymmetric(insertion: .scale, removal: .opacity))
+                .animation(.easeOut(duration: 0.3), value: animation.isVisible)
         }
     }
     
@@ -210,10 +373,14 @@ struct GameView: View {
                     Text("+\(textData.score)")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
-                        .shadow(radius: 2)
+                        .shadow(color: .black.opacity(0.5), radius: 2)
                         .position(x: coordinateToPoint(textData.coordinate).x, y: coordinateToPoint(textData.coordinate).y)
-                        .offset(y: -30) // Float up
-                        .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeIn(duration: 0.5))))
+                        .transition(
+                            .asymmetric(
+                                insertion: .scale.animation(.spring(response: 0.3, dampingFraction: 0.6)),
+                                removal: .offset(y: -50).combined(with: .opacity)
+                            )
+                        )
                 }
             }
         }
@@ -225,6 +392,9 @@ struct GameView: View {
             VStack {
                 Text("Game Over")
                     .font(.system(size: 60, weight: .bold, design: .rounded))
+                    .foregroundStyle(LinearGradient(colors: [.red, .orange], startPoint: .top, endPoint: .bottom))
+                    .shadow(color: .red.opacity(0.5), radius: 5)
+                    .padding(.bottom)
                 
                 Text("Final Score: \(gameManager.score)")
                     .font(.title)
@@ -240,21 +410,29 @@ struct GameView: View {
                         .padding(.bottom)
                 }
                 
-                Button("New Run") {
+                Button(action: {
                     SoundManager.shared.playSound(.buttonClick)
                     HapticManager.shared.trigger(.light)
                     startNewRun()
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("New Run")
+                    }
                 }
                 .font(.largeTitle)
                 .padding()
                 .background(Color.green)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-                .padding()
+                .padding(.bottom)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black.opacity(0.8))
+            .background(
+                LinearGradient(colors: [.black.opacity(0.8), .black.opacity(0.95)], startPoint: .top, endPoint: .bottom)
+            )
             .foregroundColor(.white)
+            .transition(.opacity.animation(.easeIn))
         }
     }
     
@@ -264,10 +442,10 @@ struct GameView: View {
             ForEach(particles) { particle in
                 Circle()
                     .fill(particle.color)
-                    .frame(width: 8, height: 8)
+                    .frame(width: particle.size, height: particle.size)
                     .position(particle.position)
                     .blur(radius: 3.0)
-                    .opacity(0.8)
+                    .opacity(particle.opacity)
                     .transition(.opacity)
             }
         }
@@ -440,9 +618,11 @@ struct GameView: View {
         floatingScores.append(newScoreText)
         
         // After a delay, trigger the removal animation by setting isVisible to false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if let index = floatingScores.firstIndex(where: { $0.id == newScoreText.id }) {
-                floatingScores[index].isVisible = false
+                withAnimation(.easeIn(duration: 0.8)) {
+                    floatingScores[index].isVisible = false
+                }
             }
         }
         
@@ -490,8 +670,10 @@ struct GameView: View {
                 y: startPoint.y + CGFloat.random(in: -40...40)
             )
             let duration = Double.random(in: 0.4...0.8)
+            let size = CGFloat.random(in: 5...12)
+            let opacity = Double.random(in: 0.6...1.0)
             
-            let particle = RuneParticle(color: color, position: startPoint, destination: destination, duration: duration)
+            let particle = RuneParticle(color: color, position: startPoint, destination: destination, duration: duration, size: size, opacity: opacity)
             particles.append(particle)
             
             // Find the index of the newly added particle
@@ -503,7 +685,7 @@ struct GameView: View {
                 
                 // Use a separate, slightly delayed animation for the fade-out
                 withAnimation(.easeIn(duration: duration).delay(duration * 0.8)) {
-                    // This is a proxy for fading out. The actual removal happens next.
+                    particles[index].opacity = 0
                 }
             }
         }
@@ -526,8 +708,41 @@ struct GameView: View {
     }
 }
 
+/// A view that represents a single rune.
+struct RuneView: View {
+    let rune: Rune
+    let size: CGFloat
+    
+    @State private var isAnimatingBomb = false
+    
+    var body: some View {
+        ZStack {
+            Image(String(describing: rune.type))
+                .resizable()
+                .scaledToFit()
+            
+            if rune.specialEffect == .bomb {
+                Circle()
+                    .stroke(Color.red, lineWidth: isAnimatingBomb ? 4 : 2)
+                    .scaleEffect(isAnimatingBomb ? 1.1 : 1.0)
+                    .opacity(isAnimatingBomb ? 0.5 : 1.0)
+            }
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            if rune.specialEffect == .bomb {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    isAnimatingBomb = true
+                }
+            }
+        }
+    }
+}
+
 /// A custom Shape for drawing the jagged lightning bolt.
-struct LightningShape: Shape {
+struct LightningShape: Shape, Animatable {
+    var animatableData: CGFloat = 0
+    
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let startPoint = CGPoint(x: rect.minX, y: rect.midY)
@@ -543,104 +758,9 @@ struct LightningShape: Shape {
         }
         
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        return path
-    }
-}
-
-/// A view that represents a single rune.
-struct RuneView: View {
-    let rune: Rune
-    let size: CGFloat
-    
-    @State private var isAnimatingBomb = false
-    
-    var body: some View {
-        ZStack {
-            RuneShape(type: rune.type)
-                .fill(color(for: rune.type))
-            
-            if rune.specialEffect == .bomb {
-                Circle()
-                    .stroke(Color.red, lineWidth: isAnimatingBomb ? 4 : 2)
-                    .scaleEffect(isAnimatingBomb ? 1.1 : 1.0)
-                    .opacity(isAnimatingBomb ? 0.5 : 1.0)
-            }
-        }
-        .frame(width: size, height: size)
-        .background(Color.black.opacity(0.2))
-        .cornerRadius(6)
-        .onAppear {
-            if rune.specialEffect == .bomb {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                    isAnimatingBomb = true
-                }
-            }
-        }
-    }
-    
-    /// Returns the corresponding color for a given rune type.
-    private func color(for type: RuneType) -> Color {
-        switch type {
-        case .fire: return .red
-        case .water: return .blue
-        case .earth: return .brown
-        case .air: return .cyan
-        case .light: return .yellow
-        }
-    }
-}
-
-/// A custom SwiftUI Shape that draws a unique path for each rune type.
-struct RuneShape: Shape {
-    let type: RuneType
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
         
-        switch type {
-        case .fire:
-            // A stylized flame shape
-            path.move(to: CGPoint(x: rect.midX, y: rect.minY + 5))
-            path.addQuadCurve(to: CGPoint(x: rect.minX + 8, y: rect.maxY - 5), control: CGPoint(x: rect.minX, y: rect.midY))
-            path.addQuadCurve(to: CGPoint(x: rect.maxX - 8, y: rect.maxY - 5), control: CGPoint(x: rect.midX, y: rect.maxY + 10))
-            path.addQuadCurve(to: CGPoint(x: rect.midX, y: rect.minY + 5), control: CGPoint(x: rect.maxX, y: rect.midY))
-            
-        case .water:
-            // A classic droplet shape
-            path.move(to: CGPoint(x: rect.midX, y: rect.minY + 5))
-            path.addCurve(to: CGPoint(x: rect.midX, y: rect.maxY - 5),
-                          control1: CGPoint(x: rect.maxX, y: rect.minY + 5),
-                          control2: CGPoint(x: rect.midX + 5, y: rect.maxY))
-            path.addCurve(to: CGPoint(x: rect.midX, y: rect.minY + 5),
-                          control1: CGPoint(x: rect.midX - 5, y: rect.maxY),
-                          control2: CGPoint(x: rect.minX, y: rect.minY + 5))
-            
-        case .earth:
-            // A solid, crystal-like hexagon
-            path.move(to: CGPoint(x: rect.midX, y: rect.minY + 5))
-            path.addLine(to: CGPoint(x: rect.maxX - 5, y: rect.midY - 10))
-            path.addLine(to: CGPoint(x: rect.maxX - 5, y: rect.midY + 10))
-            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY - 5))
-            path.addLine(to: CGPoint(x: rect.minX + 5, y: rect.midY + 10))
-            path.addLine(to: CGPoint(x: rect.minX + 5, y: rect.midY - 10))
-            path.closeSubpath()
-
-        case .air:
-            // A swirling, windy shape
-            path.move(to: CGPoint(x: rect.minX + 10, y: rect.midY - 5))
-            path.addQuadCurve(to: CGPoint(x: rect.maxX - 10, y: rect.midY), control: CGPoint(x: rect.midX, y: rect.minY))
-            path.move(to: CGPoint(x: rect.minX + 10, y: rect.midY + 5))
-            path.addQuadCurve(to: CGPoint(x: rect.maxX - 5, y: rect.midY + 5), control: CGPoint(x: rect.midX + 5, y: rect.maxY))
-
-        case .light:
-            // A four-pointed star
-            path.move(to: CGPoint(x: rect.midX, y: rect.minY + 5))
-            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY - 5))
-            path.move(to: CGPoint(x: rect.minX + 5, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.maxX - 5, y: rect.midY))
-        }
-        
-        return path
+        // Trim the path based on the animatableData
+        return path.trimmedPath(from: 0, to: animatableData)
     }
 }
 

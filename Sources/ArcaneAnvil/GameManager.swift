@@ -2,6 +2,7 @@ import Foundation
 
 /// Represents the current state of the game session.
 enum GameState {
+    case choosingStarter
     case playing
     case shop
     case levelComplete // This will now be more of a transition state
@@ -34,10 +35,12 @@ class GameManager: ObservableObject {
     /// The cards currently available for purchase in the shop.
     @Published var shopSelection: [EnchantmentCard] = []
     
+    /// The cards available for the player to choose from at the start of a run.
+    @Published var starterSelection: [EnchantmentCard] = []
+    
     init() {
-        // Start with our enchantments for testing.
-        self.activeEnchantments = [.volcanicHeart, .tidalAffinity, .chainReaction, .stonemasonsSecret]
         self.highScore = PersistenceManager.shared.loadHighScore()
+        startNewRun() // Start a proper run instead of giving all cards
     }
     
     /// Decrements the move counter by one.
@@ -81,10 +84,11 @@ class GameManager: ObservableObject {
                 }
                 
             case "Volcanic Heart":
+                // Lvl 1: 5 runes, Lvl 2: 4 runes, Lvl 3: 3 runes
+                let triggerCount = 6 - enchantment.level
                 let fireRunes = matches.filter { board.grid[$0.x][$0.y]?.type == .fire }
-                if fireRunes.count >= 5 {
+                if fireRunes.count >= triggerCount {
                     // Turn one of the matched fire runes into a bomb.
-                    // We'll pick the first one for simplicity.
                     if let bombCoord = fireRunes.first {
                         newBombs.insert(bombCoord)
                     }
@@ -93,15 +97,16 @@ class GameManager: ObservableObject {
             case "Tidal Affinity":
                 let waterRunesMatched = matches.filter { board.grid[$0.x][$0.y]?.type == .water }.count
                 if waterRunesMatched > 0 {
-                    // Also apply all multipliers to the bonus points.
-                    pointsToAdd += Int(Double(waterRunesMatched * 10) * totalMultiplier)
+                    // Lvl 1: 2x, Lvl 2: 3x, Lvl 3: 4x
+                    let bonusMultiplier = Double(enchantment.level)
+                    pointsToAdd += Int(Double(waterRunesMatched * 10) * totalMultiplier * bonusMultiplier)
                 }
                 
             case "Stonemason's Secret":
                 let earthRunesMatched = matches.filter { board.grid[$0.x][$0.y]?.type == .earth }.count
                 if earthRunesMatched > 0 {
-                    // Increase the bonus for the *next* match in this turn.
-                    newMultiplierBonus += 1.0
+                    // Lvl 1: +1, Lvl 2: +1.5, Lvl 3: +2.0
+                    newMultiplierBonus += 0.5 + (Double(enchantment.level) * 0.5)
                 }
                 
             default:
@@ -134,15 +139,52 @@ class GameManager: ObservableObject {
         shopSelection = Array(availableForPurchase.shuffled().prefix(3))
     }
     
+    /// Spends gold to refresh the shop selection.
+    func rerollShop() {
+        let rerollCost = 10
+        if gold >= rerollCost {
+            gold -= rerollCost
+            prepareShop()
+        }
+    }
+    
     /// Logic for purchasing a card from the shop.
     func buyCard(_ card: EnchantmentCard) {
-        let cost = 10 // Let's say all cards cost 10 for now
-        if gold >= cost {
-            gold -= cost
+        if gold >= card.cost {
+            gold -= card.cost
             activeEnchantments.append(card)
             // Remove the card from the selection so it can't be bought again
             shopSelection.removeAll { $0.id == card.id }
         }
+    }
+    
+    /// Logic for selling an active enchantment.
+    func sellCard(_ card: EnchantmentCard) {
+        if let index = activeEnchantments.firstIndex(where: { $0.id == card.id }) {
+            let soldCard = activeEnchantments.remove(at: index)
+            gold += soldCard.cost / 2 // Get half the cost back
+            // The card is now available to appear in the shop again
+            prepareShop()
+        }
+    }
+    
+    /// Logic for upgrading an active enchantment.
+    func upgradeCard(_ card: EnchantmentCard) {
+        guard let cost = card.upgradeCost, gold >= cost else { return }
+        
+        if let index = activeEnchantments.firstIndex(where: { $0.id == card.id }) {
+            gold -= cost
+            activeEnchantments[index].level += 1
+            SoundManager.shared.playSound(.levelComplete) // A satisfying upgrade sound
+            HapticManager.shared.trigger(.success)
+        }
+    }
+    
+    /// Sets the chosen card, gives starting gold, and begins the game.
+    func selectStarter(_ card: EnchantmentCard) {
+        activeEnchantments = [card]
+        gold = 15 // Start with enough gold for a reroll or a cheap card
+        gameState = .playing
     }
     
     /// Resets the game to its initial state for a new run.
@@ -153,16 +195,20 @@ class GameManager: ObservableObject {
         scoreTarget = 1000
         movesRemaining = 20
         activeEnchantments.removeAll()
-        gameState = .playing
-        // TODO: Add logic to let the player choose a starting enchantment.
+        
+        // Prepare a selection of basic cards for the player to choose from.
+        starterSelection = EnchantmentCard.allCards.filter { $0.cost <= 15 }.shuffled()
+        
+        gameState = .choosingStarter
     }
     
     /// Called when the player successfully clears a level.
     func levelCleared() {
         currentLevel += 1
         // Give slightly fewer moves for higher levels to increase difficulty
-        movesRemaining = max(10, 20 - currentLevel)
-        scoreTarget = Int(Double(scoreTarget) * 1.5)
+        movesRemaining = max(10, 20 - (currentLevel / 2)) // Lose a move every two levels
+        // Use a more linear scaling for the score target to avoid an impossible curve.
+        scoreTarget += 500 + (currentLevel * 150)
         gameState = .playing
     }
 } 
