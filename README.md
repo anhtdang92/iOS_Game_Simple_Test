@@ -31,6 +31,29 @@
 
 ---
 
+## Recent Updates & Fixes
+
+### Latest Improvements (Latest Commit: 773b0da)
+
+**Fixed Blank Screen Issue:** Resolved a critical bug that caused the game board to display as blank when progressing to new levels.
+
+**Key Fixes:**
+1. **Grid Structure Correction:** Fixed the SwiftUI Grid layout in `GameView.swift` by properly structuring the row and column loops for correct game board rendering.
+2. **Visual Rune Representation:** Replaced non-existent image assets with colorful, visually distinct rune representations:
+   - 🔥 Fire (Red)
+   - 💧 Water (Blue) 
+   - 🌍 Earth (Brown)
+   - 💨 Air (Cyan)
+   - ✨ Light (Yellow)
+
+**Technical Details:**
+- Each rune now displays as a colored circle with an emoji symbol
+- Added visual effects including shadows and borders for better aesthetics
+- Maintained all existing game mechanics and functionality
+- Improved visual feedback for special effects (bombs, lightning, etc.)
+
+---
+
 ## Graphics Prompts
 
 Here are some prompts that can be used with an AI image generator (like Midjourney, DALL-E, etc.) to create the visual assets for the game.
@@ -66,7 +89,7 @@ This document outlines the architecture and logic of the fully-featured Arcane A
 *   **Models (`Rune.swift`, `EnchantmentCard.swift`)**: These define the basic data structures. `Rune` now includes a `specialEffect` property to designate bombs. `EnchantmentCard` contains a master list (`allCards`) of every card in the game for the shop to use.
 *   **`GameBoard.swift`**: The heart of the grid logic. It now has enhanced functions to handle special effects, such as `setSpecialEffect`, `clearRow` for lightning, and an `areaOfEffect` calculator for bomb detonations. The `removeMatches` function was upgraded to check for and detonate bombs.
 *   **`GameManager.swift`**: The central brain of the game. It manages all major state variables:
-    *   **`GameState`**: An enum (`playing`, `shop`, `gameOver`) that dictates the overall state of the application.
+    *   **`GameState`**: An enum (`choosingStarter`, `playing`, `shop`, `levelComplete`, `gameOver`) that dictates the overall state of the application.
     *   **Player Stats**: `score`, `gold`, `currentLevel`, `scoreTarget`, `movesRemaining`, and `highScore`.
     *   **Gameplay Logic**: The `processMatches` function is the core of the synergy system. It takes the current `comboCount` and a `currentMultiplierBonus` to calculate score and determine if any new special effects (bombs, lightning) should be created.
     *   **Progression**: It handles the logic for the `shop`, `levelCleared`, and `gameOver` states.
@@ -97,8 +120,9 @@ The `processMove` function in `GameView` orchestrates the entire turn sequence:
 ### 3. UI and Polish (`GameView.swift`)
 
 The UI is designed to be responsive and satisfying.
-*   **State-Driven Overlays**: The view uses a stack of overlays that appear based on the `GameManager.gameState` (`shop`, `gameOver`). This keeps the UI logic clean.
-*   **Programmatic Graphics**: All game pieces and effects (`RuneShape`, `LightningShape`) are drawn programmatically with SwiftUI, making them scalable and easy to modify.
+*   **State-Driven Overlays**: The view uses a stack of overlays that appear based on the `GameManager.gameState` (`choosingStarter`, `shop`, `gameOver`). This keeps the UI logic clean.
+*   **Visual Rune Representation**: Runes are displayed as colorful circles with emoji symbols, making them easily distinguishable and visually appealing.
+*   **Programmatic Graphics**: All game pieces and effects (`LightningShape`) are drawn programmatically with SwiftUI, making them scalable and easy to modify.
 *   **Animations**:
     *   **Score Counter**: The main score doesn't snap to new values; it animates upwards.
     *   **Grid**: Runes scale and fade on creation/destruction and fall with a bouncy spring animation.
@@ -106,3 +130,35 @@ The UI is designed to be responsive and satisfying.
     *   **Particle Effects**: When runes are matched, they burst into small, animated particles that fly outwards and fade.
 *   **Audio-Visual-Tactile Feedback**: Every significant action is paired with a corresponding sound, haptic, and visual effect to make the game feel immersive and responsive.
 *   **High Score Display**: The high score is always visible on the main screen and is a central part of the Game Over screen to motivate the player.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Xcode 15.0 or later
+- iOS 17.0 or later
+- Swift 5.9 or later
+
+### Installation
+1. Clone the repository
+2. Open `ArcaneAnvilApp.swift` in Xcode
+3. Build and run the project
+
+### Current Status
+✅ **Fully Playable**: All core game mechanics are implemented and functional  
+✅ **Visual Assets**: Runes are properly displayed with colors and symbols  
+✅ **Game Loop**: Complete match-3 gameplay with cascading matches  
+✅ **Enchantment System**: Shop, card purchasing, and synergy effects  
+✅ **Progression**: Level-based progression with increasing difficulty  
+✅ **Persistence**: High score saving between sessions  
+
+### Known Issues
+- Sound and haptic feedback currently print to console (ready for audio assets)
+- No actual image assets (using programmatic graphics instead)
+
+---
+
+## Contributing
+
+This is a prototype/demo project. Feel free to fork and experiment with the codebase!
