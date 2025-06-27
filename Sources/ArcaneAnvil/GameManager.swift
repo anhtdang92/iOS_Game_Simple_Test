@@ -29,6 +29,12 @@ class GameManager: ObservableObject {
     @Published var highScore: Int = 0
     @Published var gameState: GameState = .choosingStarter
     
+    // Achievement tracking
+    @Published var totalMatches: Int = 0
+    @Published var maxCombo: Int = 0
+    @Published var specialRunesCreated: Int = 0
+    @Published var specialRuneTypes: Set<String> = []
+    
     /// The player's currently active enchantment cards.
     @Published var activeEnchantments: [EnchantmentCard] = []
     
@@ -41,12 +47,26 @@ class GameManager: ObservableObject {
     // A weak reference to the game board to avoid retain cycles.
     private weak var gameBoard: GameBoard?
     
+    // Achievement manager reference
+    private weak var achievementManager: AchievementManager?
+    
+    // Daily challenge manager reference
+    private weak var dailyChallengeManager: DailyChallengeManager?
+    
     init() {
         self.highScore = PersistenceManager.shared.loadHighScore()
     }
     
     func setup(with gameBoard: GameBoard) {
         self.gameBoard = gameBoard
+    }
+    
+    func setupAchievements(with achievementManager: AchievementManager) {
+        self.achievementManager = achievementManager
+    }
+    
+    func setupDailyChallenges(with dailyChallengeManager: DailyChallengeManager) {
+        self.dailyChallengeManager = dailyChallengeManager
     }
     
     /// Decrements the move counter by one.
@@ -97,6 +117,8 @@ class GameManager: ObservableObject {
                     // Turn one of the matched fire runes into a bomb.
                     if let bombCoord = fireRunes.first {
                         newBombs.insert(bombCoord)
+                        specialRunesCreated += 1
+                        specialRuneTypes.insert("bomb")
                     }
                 }
                 
@@ -115,10 +137,76 @@ class GameManager: ObservableObject {
                     newMultiplierBonus += 0.5 + (Double(enchantment.level) * 0.5)
                 }
                 
+            case "Line Master":
+                // Create line clearers for 4+ matches in a line
+                if matches.count >= 4 {
+                    // Determine if it's a horizontal or vertical line
+                    let isHorizontal = matches.allSatisfy { $0.y == matches.first?.y }
+                    let isVertical = matches.allSatisfy { $0.x == matches.first?.x }
+                    
+                    if isHorizontal || isVertical {
+                        let direction: LineDirection = isHorizontal ? .horizontal : .vertical
+                        if let centerCoord = matches.first {
+                            board.setSpecialEffect(at: centerCoord, effect: .lineClearer(direction: direction))
+                            specialRunesCreated += 1
+                            specialRuneTypes.insert("lineClearer")
+                        }
+                    }
+                }
+                
+            case "Color Weaver":
+                // Create color changers for 6+ matches
+                if matches.count >= 6 {
+                    if let centerCoord = matches.first {
+                        board.setSpecialEffect(at: centerCoord, effect: .colorChanger)
+                        specialRunesCreated += 1
+                        specialRuneTypes.insert("colorChanger")
+                    }
+                }
+                
+            case "Blast Radius":
+                // Enhance existing bombs with larger radius
+                let bombRunes = matches.filter { board.grid[$0.x][$0.y]?.specialEffect == .bomb }
+                for bombCoord in bombRunes {
+                    // Upgrade bomb to area clearer with radius 2
+                    board.setSpecialEffect(at: bombCoord, effect: .areaClearer(radius: 2))
+                    specialRuneTypes.insert("areaClearer")
+                }
+                
+            case "Multiplier Mage":
+                // Light runes act as multipliers
+                let lightRunes = matches.filter { board.grid[$0.x][$0.y]?.type == .light }
+                if lightRunes.count > 0 {
+                    // Each light rune adds a multiplier effect
+                    for lightCoord in lightRunes {
+                        board.setSpecialEffect(at: lightCoord, effect: .multiplier)
+                        specialRunesCreated += 1
+                        specialRuneTypes.insert("multiplier")
+                    }
+                    // Bonus points for light rune matches
+                    pointsToAdd += Int(Double(lightRunes.count * 15) * totalMultiplier)
+                }
+                
             default:
                 break
             }
         }
+        
+        // Update achievement tracking
+        totalMatches += matches.count
+        maxCombo = max(maxCombo, comboCount)
+        
+        // Update achievements
+        achievementManager?.updateProgress(type: .matches, value: totalMatches)
+        achievementManager?.updateProgress(type: .combos, value: maxCombo)
+        achievementManager?.updateProgress(type: .score, value: score + pointsToAdd)
+        achievementManager?.updateProgress(type: .cards, value: activeEnchantments.count)
+        achievementManager?.updateProgress(type: .specialRunes, value: specialRuneTypes.count)
+        
+        // Update daily challenges
+        dailyChallengeManager?.updateProgress(type: .matches, value: totalMatches)
+        dailyChallengeManager?.updateProgress(type: .combos, value: maxCombo)
+        dailyChallengeManager?.updateProgress(type: .score, value: score + pointsToAdd)
         
         // The final score for this specific match is calculated and returned.
         // The view loop will be responsible for updating the manager's state.
@@ -132,6 +220,9 @@ class GameManager: ObservableObject {
         if gameState == .playing {
             gameState = .shop
             prepareShop()
+            
+            // Update level achievement
+            achievementManager?.updateProgress(type: .levels, value: currentLevel)
         }
     }
     

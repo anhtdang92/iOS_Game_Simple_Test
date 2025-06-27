@@ -137,6 +137,54 @@ class GameBoard: ObservableObject {
                     }
                 }
             }
+        case .lineClearer(let direction):
+            switch direction {
+            case .horizontal:
+                // Clear entire row
+                for x in 0..<width {
+                    affectedCoords.insert(Coordinate(x: x, y: center.y))
+                }
+            case .vertical:
+                // Clear entire column
+                for y in 0..<height {
+                    affectedCoords.insert(Coordinate(x: center.x, y: y))
+                }
+            case .cross:
+                // Clear both row and column
+                for x in 0..<width {
+                    affectedCoords.insert(Coordinate(x: x, y: center.y))
+                }
+                for y in 0..<height {
+                    affectedCoords.insert(Coordinate(x: center.x, y: y))
+                }
+            }
+        case .colorChanger:
+            // Change all runes of the same type on the board
+            if let runeType = grid[center.x][center.y]?.type {
+                for x in 0..<width {
+                    for y in 0..<height {
+                        if grid[x][y]?.type == runeType {
+                            affectedCoords.insert(Coordinate(x: x, y: y))
+                        }
+                    }
+                }
+            }
+        case .areaClearer(let radius):
+            // Clear a circular area around the center
+            for x in (center.x - radius)...(center.x + radius) {
+                for y in (center.y - radius)...(center.y + radius) {
+                    let coord = Coordinate(x: x, y: y)
+                    if isCoordinateValid(coord) {
+                        let distance = abs(x - center.x) + abs(y - center.y)
+                        if distance <= radius {
+                            affectedCoords.insert(coord)
+                        }
+                    }
+                }
+            }
+        case .multiplier:
+            // Multiplier runes don't clear anything, they just provide bonuses
+            break
         }
         return affectedCoords
     }

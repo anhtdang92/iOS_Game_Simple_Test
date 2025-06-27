@@ -1,5 +1,7 @@
 # Arcane Anvil
 
+**A simple yet addictive iOS puzzle roguelike by Dang Production**
+
 ## Project Scope
 
 **Arcane Anvil** is a simple yet addictive iOS puzzle roguelike. The game combines the intuitive nature of match-3 gameplay with the strategic depth and high replayability of a deck-builder, inspired by the compelling synergies found in games like Balatro.
@@ -31,6 +33,86 @@
 
 ---
 
+## Planned Improvements & Roadmap
+
+### 🎮 **Gameplay Enhancements**
+
+#### Core Mechanics
+- [x] **Enhanced Special Runes**: Added line clearers, color changers, area clearers, and multipliers beyond bombs
+- [ ] **Advanced Combo System**: Visual combo indicators with exponential multipliers
+- [ ] **Time Pressure Modes**: Timer-based challenges and speed rounds
+- [ ] **Power-up System**: Temporary boosts and special abilities
+
+#### Progression & Difficulty
+- [ ] **Dynamic Difficulty**: Adaptive score targets based on player skill
+- [ ] **Daily Challenges**: Unique daily missions with special objectives
+- [x] **Achievement System**: Milestone tracking with rewards and notifications
+- [ ] **Seasonal Events**: Limited-time content and special rules
+
+#### Enchantment System
+- [x] **Rarity Tiers**: Common, Rare, Epic, Legendary card classifications with visual indicators
+- [ ] **Card Synergies**: Special combinations that unlock bonus effects
+- [ ] **Card Evolution**: Transformation mechanics for upgrading cards
+- [ ] **Deck Building**: Strategic card selection and management
+
+### 🎨 **Visual & Audio Polish**
+
+#### Visual Improvements
+- [x] **Particle Systems**: Elaborate effects for matches, combos, and special events
+- [x] **Screen Effects**: Camera shake, screen flashes, and visual feedback
+- [ ] **Theme System**: Multiple visual themes for different levels/seasons
+- [x] **Animation Polish**: Smooth transitions and micro-interactions
+
+#### Audio Implementation
+- [ ] **Background Music**: Atmospheric tracks that adapt to game state
+- [ ] **Sound Effects**: Complete audio implementation for all game actions
+- [ ] **Audio Mixing**: Dynamic volume and effect layering
+- [x] **Haptic Integration**: Full haptic feedback system implementation
+
+### 📱 **User Experience**
+
+#### Onboarding & Tutorial
+- [x] **Interactive Tutorial**: Step-by-step guide for new players
+- [ ] **Contextual Help**: Tooltips and hints for complex mechanics
+- [ ] **Progressive Disclosure**: Gradual feature unlocking
+- [ ] **Accessibility**: Color blind support, text scaling, and assistive features
+
+#### Engagement Features
+- [ ] **Social Integration**: Leaderboards and friend challenges
+- [ ] **Replay System**: Save and share impressive runs
+- [x] **Statistics**: Detailed performance tracking and analytics
+- [ ] **Collection System**: Card gallery and unlockable content
+
+### 🔧 **Technical Improvements**
+
+#### Performance & Stability
+- [ ] **Rendering Optimization**: Efficient grid rendering and animation
+- [ ] **Memory Management**: Proper cleanup and resource management
+- [ ] **Battery Optimization**: Reduced power consumption
+- [ ] **Error Handling**: Comprehensive error recovery and logging
+
+#### Code Quality
+- [ ] **Unit Testing**: Test coverage for core game logic
+- [ ] **Documentation**: Enhanced code comments and API docs
+- [ ] **Modular Architecture**: Better separation of concerns
+- [ ] **Performance Monitoring**: Analytics and crash reporting
+
+### 🚀 **Future Features**
+
+#### Advanced Gameplay
+- [ ] **Multiplayer Modes**: Competitive and cooperative play
+- [ ] **Custom Rules**: Player-created challenges and variants
+- [ ] **Story Mode**: Narrative-driven progression
+- [ ] **Endless Mode**: Infinite progression with scaling difficulty
+
+#### Platform Expansion
+- [ ] **iPad Support**: Optimized tablet experience
+- [ ] **Apple Watch**: Companion app with quick play
+- [ ] **macOS**: Desktop version with enhanced UI
+- [ ] **Cloud Sync**: Cross-device progress synchronization
+
+---
+
 ## Recent Updates & Fixes
 
 ### Latest Improvements (Latest Commit: 773b0da)
@@ -51,6 +133,57 @@
 - Added visual effects including shadows and borders for better aesthetics
 - Maintained all existing game mechanics and functionality
 - Improved visual feedback for special effects (bombs, lightning, etc.)
+
+### New Features Added
+
+**Enhanced Special Rune System:**
+- **Line Clearers**: Clear entire rows or columns with blue visual effects
+- **Color Changers**: Transform all runes of the same type with purple effects
+- **Area Clearers**: Clear circular areas with orange effects
+- **Multipliers**: Light runes that double adjacent match scores with yellow effects
+
+**Card Rarity System:**
+- **Rarity Tiers**: Common (Gray), Rare (Blue), Epic (Purple), Legendary (Orange)
+- **Visual Indicators**: Colored borders and badges for each rarity level
+- **Enhanced Pricing**: Upgrade costs scale with rarity and level
+
+**Achievement System:**
+- **15+ Achievements**: Track score, matches, combos, cards, levels, and special runes
+- **Real-time Notifications**: Pop-up notifications when achievements are unlocked
+- **Progress Tracking**: Persistent achievement progress across game sessions
+- **Rarity Levels**: Bronze, Silver, Gold, Platinum achievement tiers
+
+**New Enchantment Cards:**
+- **Line Master**: Creates line clearers for 4+ matches
+- **Color Weaver**: Creates color changers for 6+ matches  
+- **Blast Radius**: Enhances bombs with larger explosion radius
+- **Multiplier Mage**: Makes light runes act as score multipliers
+
+### Polish Features Added
+
+**Enhanced Visual Effects:**
+- **Polished Combo Display**: Animated combo counter with gradient effects and scaling animations
+- **Smooth Score Animation**: Score counter smoothly animates to new values instead of jumping
+- **Level Completion Celebration**: Confetti effects and animated celebration screen
+- **Enhanced Game Over Screen**: Animated title, better layout, and improved visual hierarchy
+
+**Interactive Tutorial System:**
+- **Step-by-Step Guide**: 8 tutorial steps covering all game mechanics
+- **Progress Tracking**: Visual progress bar and completion percentage
+- **Skip Options**: Optional steps can be skipped, required steps must be completed
+- **Persistent Progress**: Tutorial completion is saved between sessions
+
+**Settings & Statistics:**
+- **Comprehensive Settings Menu**: Game statistics, tutorial reset, and credits
+- **Achievement Tracking**: Real-time achievement progress and completion percentage
+- **Game Statistics**: High score, achievement count, and completion percentage
+- **Credits Section**: Game information and developer attribution
+
+**Enhanced Animations:**
+- **Micro-Interactions**: Button hover effects, scaling animations, and smooth transitions
+- **Particle Systems**: Enhanced particle effects for matches and special events
+- **Screen Transitions**: Smooth overlay transitions with spring animations
+- **Visual Feedback**: Improved haptic feedback and visual response to all actions
 
 ---
 

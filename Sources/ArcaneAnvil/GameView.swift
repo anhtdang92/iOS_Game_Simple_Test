@@ -11,6 +11,18 @@ struct RuneParticle: Identifiable {
     var opacity: Double
 }
 
+/// A struct to manage confetti particles for celebrations
+struct ConfettiParticle: Identifiable {
+    let id = UUID()
+    let color: Color
+    var position: CGPoint
+    var velocity: CGPoint
+    var rotation: Double
+    var rotationSpeed: Double
+    let size: CGFloat
+    var opacity: Double
+}
+
 /// A struct to manage the data for a floating score text animation.
 struct FloatingScoreText: Identifiable {
     let id = UUID()
@@ -23,11 +35,24 @@ struct GameView: View {
     
     @StateObject private var gameBoard = GameBoard(width: 8, height: 8)
     @StateObject private var gameManager = GameManager()
+    @StateObject private var achievementManager = AchievementManager()
+    @StateObject private var tutorialManager = TutorialManager()
+    @StateObject private var dailyChallengeManager = DailyChallengeManager()
     @State private var selectedCoordinate: Coordinate?
     @State private var lightningAnimation: (row: Int, isVisible: Bool)? = nil
     @State private var comboDisplay: (multiplier: Double, isVisible: Bool) = (1.0, false)
     @State private var floatingScores: [FloatingScoreText] = []
     @State private var particles: [RuneParticle] = []
+    @State private var comboCounter: Int = 0
+    @State private var showComboText: Bool = false
+    @State private var animatedScore: Double = 0
+    @State private var scoreAnimationTimer: Timer?
+    @State private var showLevelComplete: Bool = false
+    @State private var confettiParticles: [ConfettiParticle] = []
+    @State private var showSettings: Bool = false
+    @State private var showLoadingScreen: Bool = true
+    @State private var loadingProgress: Double = 0
+    @State private var showDailyChallenges: Bool = false
     
     private let runeFrameSize: CGFloat = 40
     private let gridSpacing: CGFloat = 4
@@ -46,6 +71,12 @@ struct GameView: View {
                 .overlay(floatingScoreOverlay)
                 .overlay(gameOverOverlay)
                 .overlay(particleOverlay)
+                .overlay(achievementOverlay)
+                .overlay(levelCompleteOverlay)
+                .overlay(tutorialOverlay)
+                .overlay(settingsOverlay)
+                .overlay(loadingScreenOverlay)
+                .overlay(dailyChallengesOverlay)
             
             Spacer()
             
@@ -56,13 +87,37 @@ struct GameView: View {
         .padding()
         .background(Color(red: 0.1, green: 0.1, blue: 0.15).ignoresSafeArea())
         .onAppear {
-            gameManager.setup(with: gameBoard)
-            startNewRun()
+            startLoadingSequence()
         }
     }
     
     private var gameHeader: some View {
         VStack {
+            HStack {
+                Button(action: {
+                    SoundManager.shared.playSound(.buttonClick)
+                    HapticManager.shared.trigger(.light)
+                    showDailyChallenges = true
+                }) {
+                    Image(systemName: "calendar")
+                        .font(.title2)
+                        .foregroundColor(.orange)
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    SoundManager.shared.playSound(.buttonClick)
+                    HapticManager.shared.trigger(.light)
+                    showSettings = true
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title2)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal)
+            
             Text("Arcane Anvil")
                 .font(.system(size: 48, weight: .bold, design: .serif))
                 .shadow(color: .blue.opacity(0.8), radius: 3, x: 2, y: 2)
@@ -74,6 +129,11 @@ struct GameView: View {
                     )
                 )
                 .padding(.bottom, 2)
+            
+            Text("by Dang Production")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundColor(.gray)
+                .padding(.bottom, 8)
             
             gameStats
             
@@ -88,7 +148,7 @@ struct GameView: View {
     private var gameStats: some View {
         HStack {
             Spacer()
-            statView(icon: "star.fill", value: "\(gameManager.score)", label: "Score")
+            statView(icon: "star.fill", value: "\(Int(animatedScore))", label: "Score")
             Spacer()
             statView(icon: "target", value: "\(gameManager.scoreTarget)", label: "Target")
             Spacer()
@@ -98,6 +158,9 @@ struct GameView: View {
             Spacer()
         }
         .padding(.vertical, 5)
+        .onChange(of: gameManager.score) { newScore in
+            animateScoreChange(from: animatedScore, to: Double(newScore))
+        }
     }
     
     private func statView(icon: String, value: String, label: String) -> some View {
@@ -158,14 +221,52 @@ struct GameView: View {
     @ViewBuilder
     private var comboOverlay: some View {
         if comboDisplay.isVisible {
-            Text("\(String(format: "%.1f", comboDisplay.multiplier))x Combo!")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 3, x: 2, y: 2)
-                .transition(.asymmetric(
-                    insertion: .scale.animation(.spring(response: 0.4, dampingFraction: 0.5)),
-                    removal: .opacity.animation(.easeOut(duration: 0.5)))
-                )
+            VStack(spacing: 8) {
+                Text("COMBO!")
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.8), radius: 3, x: 2, y: 2)
+                
+                Text("\(String(format: "%.1f", comboDisplay.multiplier))x")
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.yellow, .orange, .red],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: .black.opacity(0.8), radius: 4, x: 3, y: 3)
+                    .scaleEffect(showComboText ? 1.2 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showComboText)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.black.opacity(0.8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.yellow, .orange, .red],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 3
+                            )
+                    )
+            )
+            .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+            .transition(.asymmetric(
+                insertion: .scale.animation(.spring(response: 0.4, dampingFraction: 0.5)),
+                removal: .opacity.animation(.easeOut(duration: 0.5))
+            ))
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.3).repeatCount(3, autoreverses: true)) {
+                    showComboText = true
+                }
+            }
         }
     }
     
@@ -205,8 +306,13 @@ struct GameView: View {
         Group {
             ForEach(gameManager.shopSelection) { card in
                 VStack(alignment: .leading) {
-                    Text(card.name)
-                        .font(.title2).bold()
+                    HStack {
+                        Text(card.name)
+                            .font(.title2).bold()
+                        Spacer()
+                        rarityBadge(for: card.rarity)
+                    }
+                    
                     Text(card.description)
                         .font(.body)
                     
@@ -230,13 +336,33 @@ struct GameView: View {
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue.opacity(0.7), lineWidth: 2)
+                        .stroke(rarityColor(for: card.rarity).opacity(0.7), lineWidth: 2)
                 )
-                .shadow(color: .blue.opacity(0.3), radius: 5, x: 3, y: 3)
+                .shadow(color: rarityColor(for: card.rarity).opacity(0.3), radius: 5, x: 3, y: 3)
                 .transition(.asymmetric(insertion: .scale, removal: .opacity))
             }
         }
         .animation(.default, value: gameManager.shopSelection)
+    }
+    
+    private func rarityBadge(for rarity: CardRarity) -> some View {
+        Text(rarity.rawValue.uppercased())
+            .font(.caption)
+            .fontWeight(.bold)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(rarityColor(for: rarity))
+            .foregroundColor(.white)
+            .cornerRadius(8)
+    }
+    
+    private func rarityColor(for rarity: CardRarity) -> Color {
+        switch rarity {
+        case .common: return .gray
+        case .rare: return .blue
+        case .epic: return .purple
+        case .legendary: return .orange
+        }
     }
     
     @ViewBuilder
@@ -250,8 +376,11 @@ struct GameView: View {
                 ForEach(gameManager.activeEnchantments) { card in
                     HStack {
                         VStack(alignment: .leading) {
-                            Text(card.displayName)
-                                .bold()
+                            HStack {
+                                Text(card.displayName)
+                                    .bold()
+                                rarityBadge(for: card.rarity)
+                            }
                             Text(card.description)
                                 .font(.caption)
                                 .foregroundColor(.gray)
@@ -291,7 +420,7 @@ struct GameView: View {
                     .cornerRadius(12)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            .stroke(rarityColor(for: card.rarity).opacity(0.5), lineWidth: 1)
                     )
                     .transition(.asymmetric(insertion: .scale, removal: .opacity))
                 }
@@ -408,50 +537,131 @@ struct GameView: View {
     @ViewBuilder
     private var gameOverOverlay: some View {
         if gameManager.gameState == .gameOver {
-            VStack {
-                Text("Game Over")
-                    .font(.system(size: 60, weight: .bold, design: .rounded))
-                    .foregroundStyle(LinearGradient(colors: [.red, .orange], startPoint: .top, endPoint: .bottom))
-                    .shadow(color: .red.opacity(0.5), radius: 5)
-                    .padding(.bottom)
+            ZStack {
+                // Animated background
+                Color.black.opacity(0.9)
+                    .ignoresSafeArea()
                 
-                Text("Final Score: \(gameManager.score)")
-                    .font(.title)
-                
-                if gameManager.score > gameManager.highScore {
-                    Text("New High Score!")
-                        .font(.title2)
-                        .foregroundColor(.yellow)
-                        .padding(.bottom)
-                } else {
-                    Text("High Score: \(gameManager.highScore)")
-                        .font(.title2)
-                        .padding(.bottom)
-                }
-                
-                Button(action: {
-                    SoundManager.shared.playSound(.buttonClick)
-                    HapticManager.shared.trigger(.light)
-                    startNewRun()
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.clockwise")
-                        Text("New Run")
+                VStack(spacing: 25) {
+                    // Game Over Title with animation
+                    Text("GAME OVER")
+                        .font(.system(size: 60, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.red, .orange, .yellow],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .red.opacity(0.8), radius: 10, x: 5, y: 5)
+                        .scaleEffect(showComboText ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: showComboText)
+                        .onAppear {
+                            showComboText = true
+                        }
+                    
+                    // Final Score
+                    VStack(spacing: 10) {
+                        Text("Final Score")
+                            .font(.title2)
+                            .foregroundColor(.gray)
+                        
+                        Text("\(gameManager.score)")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 2, y: 2)
                     }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.white.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                            )
+                    )
+                    
+                    // High Score or Current High Score
+                    if gameManager.score > gameManager.highScore {
+                        VStack(spacing: 8) {
+                            Text("🎉 NEW HIGH SCORE! 🎉")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.yellow)
+                                .shadow(color: .black.opacity(0.5), radius: 2, x: 1, y: 1)
+                            
+                            Text("Previous: \(gameManager.highScore)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .fill(Color.yellow.opacity(0.2))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.yellow.opacity(0.5), lineWidth: 2)
+                                )
+                        )
+                    } else {
+                        Text("High Score: \(gameManager.highScore)")
+                            .font(.title3)
+                            .foregroundColor(.gray)
+                            .padding(.bottom)
+                    }
+                    
+                    // Action Buttons
+                    VStack(spacing: 15) {
+                        Button(action: {
+                            SoundManager.shared.playSound(.buttonClick)
+                            HapticManager.shared.trigger(.light)
+                            startNewRun()
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("New Run")
+                            }
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                LinearGradient(
+                                    colors: [.green, .green.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(15)
+                            .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
+                        }
+                        
+                        Button(action: {
+                            SoundManager.shared.playSound(.buttonClick)
+                            HapticManager.shared.trigger(.light)
+                            showSettings = true
+                        }) {
+                            HStack {
+                                Image(systemName: "gearshape.fill")
+                                Text("Settings")
+                            }
+                            .font(.body)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.gray.opacity(0.3))
+                            .foregroundColor(.white)
+                            .cornerRadius(15)
+                        }
+                    }
+                    .padding(.horizontal)
                 }
-                .font(.largeTitle)
-                .padding()
-                .background(Color.green)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-                .padding(.bottom)
+                .padding(40)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                LinearGradient(colors: [.black.opacity(0.8), .black.opacity(0.95)], startPoint: .top, endPoint: .bottom)
-            )
-            .foregroundColor(.white)
-            .transition(.opacity.animation(.easeIn))
+            .transition(.asymmetric(
+                insertion: .opacity.animation(.easeIn(duration: 0.5)),
+                removal: .opacity.animation(.easeOut(duration: 0.3))
+            ))
         }
     }
     
@@ -467,6 +677,61 @@ struct GameView: View {
                     .opacity(particle.opacity)
                     .transition(.opacity)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private var achievementOverlay: some View {
+        VStack {
+            ForEach(achievementManager.recentlyUnlocked) { achievement in
+                HStack {
+                    Image(systemName: achievement.icon)
+                        .font(.title2)
+                        .foregroundColor(achievementRarityColor(for: achievement.rarity))
+                    
+                    VStack(alignment: .leading) {
+                        Text("Achievement Unlocked!")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Text(achievement.name)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(achievement.rarity.rawValue)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(achievementRarityColor(for: achievement.rarity))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .padding()
+                .background(Color.black.opacity(0.8))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(achievementRarityColor(for: achievement.rarity), lineWidth: 2)
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .top).combined(with: .opacity),
+                    removal: .move(edge: .top).combined(with: .opacity)
+                ))
+            }
+        }
+        .padding(.top, 100)
+        .padding(.horizontal)
+    }
+    
+    private func achievementRarityColor(for rarity: Achievement.AchievementRarity) -> Color {
+        switch rarity {
+        case .bronze: return .brown
+        case .silver: return .gray
+        case .gold: return .yellow
+        case .platinum: return .cyan
         }
     }
     
@@ -595,7 +860,7 @@ struct GameView: View {
         if gameManager.score >= gameManager.scoreTarget {
             SoundManager.shared.playSound(.levelComplete)
             HapticManager.shared.trigger(.success)
-            gameManager.completeLevel()
+            triggerLevelComplete()
             return // Exit early so we don't check for game over
         }
         
@@ -725,6 +990,557 @@ struct GameView: View {
         case .light: return .yellow
         }
     }
+    
+    private func animateScoreChange(from: Double, to: Double) {
+        let difference = to - from
+        let steps = 30
+        let stepValue = difference / Double(steps)
+        let stepDuration = 0.016 // ~60fps
+        
+        scoreAnimationTimer?.invalidate()
+        
+        var currentStep = 0
+        scoreAnimationTimer = Timer.scheduledTimer(withTimeInterval: stepDuration, repeats: true) { timer in
+            currentStep += 1
+            animatedScore = from + (stepValue * Double(currentStep))
+            
+            if currentStep >= steps {
+                animatedScore = to
+                timer.invalidate()
+                scoreAnimationTimer = nil
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var levelCompleteOverlay: some View {
+        if showLevelComplete {
+            ZStack {
+                // Confetti background
+                ForEach(confettiParticles) { particle in
+                    Rectangle()
+                        .fill(particle.color)
+                        .frame(width: particle.size, height: particle.size)
+                        .position(particle.position)
+                        .rotationEffect(.degrees(particle.rotation))
+                        .opacity(particle.opacity)
+                }
+                
+                // Level complete content
+                VStack(spacing: 20) {
+                    Text("LEVEL COMPLETE!")
+                        .font(.system(size: 36, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.yellow, .orange, .red],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .black.opacity(0.8), radius: 5, x: 3, y: 3)
+                    
+                    Text("Score: \(gameManager.score)")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                    
+                    Text("Level \(gameManager.currentLevel)")
+                        .font(.title3)
+                        .foregroundColor(.gray)
+                    
+                    Button("Continue") {
+                        showLevelComplete = false
+                        confettiParticles.removeAll()
+                        gameManager.completeLevel()
+                    }
+                    .font(.title2)
+                    .padding()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(15)
+                    .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
+                }
+                .padding(40)
+                .background(
+                    RoundedRectangle(cornerRadius: 25)
+                        .fill(Color.black.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.yellow, .orange, .red],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 4
+                                )
+                        )
+                )
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+            }
+            .transition(.asymmetric(
+                insertion: .scale.animation(.spring(response: 0.6, dampingFraction: 0.8)),
+                removal: .opacity.animation(.easeOut(duration: 0.3))
+            ))
+        }
+    }
+    
+    private func triggerLevelComplete() {
+        showLevelComplete = true
+        createConfetti()
+    }
+    
+    private func createConfetti() {
+        let colors: [Color] = [.red, .blue, .green, .yellow, .purple, .orange, .pink, .cyan]
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        for _ in 0..<50 {
+            let particle = ConfettiParticle(
+                color: colors.randomElement() ?? .red,
+                position: CGPoint(x: CGFloat.random(in: 0...screenWidth), y: -20),
+                velocity: CGPoint(
+                    x: CGFloat.random(in: -100...100),
+                    y: CGFloat.random(in: 200...400)
+                ),
+                rotation: Double.random(in: 0...360),
+                rotationSpeed: Double.random(in: -360...360),
+                size: CGFloat.random(in: 5...15),
+                opacity: Double.random(in: 0.7...1.0)
+            )
+            confettiParticles.append(particle)
+        }
+        
+        // Animate confetti
+        for i in 0..<confettiParticles.count {
+            let duration = Double.random(in: 2.0...4.0)
+            withAnimation(.easeOut(duration: duration)) {
+                confettiParticles[i].position.y = screenHeight + 50
+                confettiParticles[i].rotation += confettiParticles[i].rotationSpeed * duration
+            }
+        }
+        
+        // Clean up confetti after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+            confettiParticles.removeAll()
+        }
+    }
+    
+    @ViewBuilder
+    private var tutorialOverlay: some View {
+        if tutorialManager.isTutorialActive, let step = tutorialManager.currentStep {
+            ZStack {
+                // Semi-transparent background
+                Color.black.opacity(0.7)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    // Progress indicator
+                    ProgressView(value: tutorialManager.progressPercentage, total: 100)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                        .scaleEffect(x: 1, y: 2, anchor: .center)
+                        .padding(.horizontal)
+                    
+                    // Tutorial content
+                    VStack(spacing: 15) {
+                        Text(step.title)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                        
+                        Text(step.description)
+                            .font(.body)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.black.opacity(0.8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.blue.opacity(0.6), lineWidth: 2)
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+                    
+                    // Action buttons
+                    HStack(spacing: 20) {
+                        if !step.isRequired {
+                            Button("Skip") {
+                                SoundManager.shared.playSound(.buttonClick)
+                                HapticManager.shared.trigger(.light)
+                                tutorialManager.skipTutorial()
+                            }
+                            .font(.title3)
+                            .padding()
+                            .background(Color.gray.opacity(0.3))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                        }
+                        
+                        Button(step.isRequired ? "Got it!" : "Next") {
+                            SoundManager.shared.playSound(.buttonClick)
+                            HapticManager.shared.trigger(.light)
+                            tutorialManager.completeCurrentStep()
+                        }
+                        .font(.title3)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
+                    }
+                }
+                .padding(30)
+            }
+            .transition(.opacity.animation(.easeInOut))
+        }
+    }
+    
+    @ViewBuilder
+    private var settingsOverlay: some View {
+        if showSettings {
+            ZStack {
+                Color.black.opacity(0.7)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showSettings = false
+                    }
+                
+                VStack(spacing: 25) {
+                    Text("Settings")
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.cyan, .blue],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Game Statistics
+                            settingsSection(title: "Statistics") {
+                                VStack(spacing: 10) {
+                                    statRow(label: "High Score", value: "\(gameManager.highScore)")
+                                    statRow(label: "Achievements", value: "\(achievementManager.unlockedAchievements.count)/\(achievementManager.achievements.count)")
+                                    statRow(label: "Completion", value: "\(String(format: "%.1f", achievementManager.completionPercentage))%")
+                                }
+                            }
+                            
+                            // Tutorial
+                            settingsSection(title: "Tutorial") {
+                                Button("Reset Tutorial") {
+                                    SoundManager.shared.playSound(.buttonClick)
+                                    HapticManager.shared.trigger(.light)
+                                    tutorialManager.resetTutorial()
+                                    showSettings = false
+                                }
+                                .font(.body)
+                                .padding()
+                                .background(Color.orange.opacity(0.3))
+                                .foregroundColor(.orange)
+                                .cornerRadius(10)
+                            }
+                            
+                            // Credits
+                            settingsSection(title: "Credits") {
+                                VStack(spacing: 8) {
+                                    Text("Arcane Anvil")
+                                        .font(.headline)
+                                        .foregroundColor(.cyan)
+                                    Text("by Dang Production")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                    Text("Version 1.0")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    Button("Close") {
+                        SoundManager.shared.playSound(.buttonClick)
+                        HapticManager.shared.trigger(.light)
+                        showSettings = false
+                    }
+                    .font(.title2)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(15)
+                    .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
+                }
+                .padding(30)
+                .background(
+                    RoundedRectangle(cornerRadius: 25)
+                        .fill(Color.black.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.cyan, .blue],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
+                )
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                .foregroundColor(.white)
+            }
+            .transition(.asymmetric(
+                insertion: .scale.animation(.spring(response: 0.6, dampingFraction: 0.8)),
+                removal: .opacity.animation(.easeOut(duration: 0.3))
+            ))
+        }
+    }
+    
+    private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.cyan)
+            
+            content()
+                .padding()
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(15)
+        }
+    }
+    
+    private func statRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundColor(.gray)
+            Spacer()
+            Text(value)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+        }
+    }
+    
+    @ViewBuilder
+    private var loadingScreenOverlay: some View {
+        if showLoadingScreen {
+            Color.black.opacity(0.7)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                ProgressView(value: loadingProgress, total: 100)
+                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                    .scaleEffect(x: 1, y: 2, anchor: .center)
+                
+                Text("Loading...")
+                    .font(.caption)
+                    .foregroundColor(.white)
+            }
+            .padding(30)
+            .background(
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(Color.black.opacity(0.9))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 25)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.cyan, .blue],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+            )
+            .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+            .foregroundColor(.white)
+        }
+    }
+    
+    private func startLoadingSequence() {
+        // Animate loading progress
+        withAnimation(.easeInOut(duration: 2.0)) {
+            loadingProgress = 100
+        }
+        
+        // Initialize game components
+        gameManager.setup(with: gameBoard)
+        gameManager.setupAchievements(with: achievementManager)
+        gameManager.setupDailyChallenges(with: dailyChallengeManager)
+        
+        // Hide loading screen after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation(.easeOut(duration: 0.5)) {
+                showLoadingScreen = false
+            }
+            startNewRun()
+        }
+    }
+    
+    @ViewBuilder
+    private var dailyChallengesOverlay: some View {
+        if showDailyChallenges {
+            ZStack {
+                Color.black.opacity(0.8)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showDailyChallenges = false
+                    }
+                
+                VStack(spacing: 20) {
+                    Text("Daily Challenges")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.orange, .yellow],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    // Progress indicator
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Progress")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            Spacer()
+                            Text("\(Int(dailyChallengeManager.completionPercentage))%")
+                                .font(.headline)
+                                .foregroundColor(.orange)
+                        }
+                        
+                        ProgressView(value: dailyChallengeManager.completionPercentage, total: 100)
+                            .progressViewStyle(LinearProgressViewStyle(tint: .orange))
+                            .scaleEffect(x: 1, y: 2, anchor: .center)
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(15)
+                    
+                    // Challenges list
+                    ScrollView {
+                        VStack(spacing: 15) {
+                            ForEach(dailyChallengeManager.todaysChallenges) { challenge in
+                                dailyChallengeCard(challenge)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Total rewards
+                    if dailyChallengeManager.totalRewards > 0 {
+                        HStack {
+                            Text("Total Rewards:")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            Text("\(dailyChallengeManager.totalRewards) Gold")
+                                .font(.headline)
+                                .foregroundColor(.yellow)
+                        }
+                        .padding()
+                        .background(Color.yellow.opacity(0.2))
+                        .cornerRadius(15)
+                    }
+                    
+                    Button("Close") {
+                        SoundManager.shared.playSound(.buttonClick)
+                        HapticManager.shared.trigger(.light)
+                        showDailyChallenges = false
+                    }
+                    .font(.title2)
+                    .padding()
+                    .background(Color.orange)
+                    .foregroundColor(.white)
+                    .cornerRadius(15)
+                    .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
+                }
+                .padding(30)
+                .background(
+                    RoundedRectangle(cornerRadius: 25)
+                        .fill(Color.black.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.orange, .yellow],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
+                )
+                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                .foregroundColor(.white)
+            }
+            .transition(.asymmetric(
+                insertion: .scale.animation(.spring(response: 0.6, dampingFraction: 0.8)),
+                removal: .opacity.animation(.easeOut(duration: 0.3))
+            ))
+        }
+    }
+    
+    private func dailyChallengeCard(_ challenge: DailyChallenge) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: challenge.type.icon)
+                    .foregroundColor(.orange)
+                    .font(.title2)
+                
+                VStack(alignment: .leading) {
+                    Text(challenge.title)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Text(challenge.description)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing) {
+                    Text("\(challenge.progress)/\(challenge.target)")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                    
+                    Text("+\(challenge.reward)G")
+                        .font(.caption)
+                        .foregroundColor(.yellow)
+                }
+            }
+            
+            // Progress bar
+            ProgressView(value: Double(challenge.progress), total: Double(challenge.target))
+                .progressViewStyle(LinearProgressViewStyle(tint: challenge.isCompleted ? .green : .orange))
+                .scaleEffect(x: 1, y: 1.5, anchor: .center)
+            
+            if challenge.isCompleted {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("Completed!")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                    Spacer()
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color.white.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(challenge.isCompleted ? Color.green.opacity(0.5) : Color.orange.opacity(0.5), lineWidth: 1)
+                )
+        )
+    }
 }
 
 /// A view that represents a single rune.
@@ -733,6 +1549,7 @@ struct RuneView: View {
     let size: CGFloat
     
     @State private var isAnimatingBomb = false
+    @State private var isAnimatingSpecial = false
     
     var body: some View {
         ZStack {
@@ -752,19 +1569,85 @@ struct RuneView: View {
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.5), radius: 1, x: 1, y: 1)
             
-            if rune.specialEffect == .bomb {
-                Circle()
-                    .stroke(Color.red, lineWidth: isAnimatingBomb ? 4 : 2)
-                    .scaleEffect(isAnimatingBomb ? 1.1 : 1.0)
-                    .opacity(isAnimatingBomb ? 0.5 : 1.0)
+            // Special effect overlays
+            if let specialEffect = rune.specialEffect {
+                specialEffectOverlay(for: specialEffect)
             }
         }
         .frame(width: size, height: size)
         .onAppear {
-            if rune.specialEffect == .bomb {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                    isAnimatingBomb = true
+            startSpecialAnimations()
+        }
+    }
+    
+    @ViewBuilder
+    private func specialEffectOverlay(for effect: SpecialEffect) -> some View {
+        switch effect {
+        case .bomb:
+            Circle()
+                .stroke(Color.red, lineWidth: isAnimatingBomb ? 4 : 2)
+                .scaleEffect(isAnimatingBomb ? 1.1 : 1.0)
+                .opacity(isAnimatingBomb ? 0.5 : 1.0)
+                .frame(width: size * 0.9, height: size * 0.9)
+                
+        case .lineClearer(let direction):
+            Group {
+                if direction == .horizontal || direction == .cross {
+                    Rectangle()
+                        .fill(Color.blue.opacity(0.3))
+                        .frame(width: size * 1.5, height: size * 0.3)
+                        .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
                 }
+                if direction == .vertical || direction == .cross {
+                    Rectangle()
+                        .fill(Color.blue.opacity(0.3))
+                        .frame(width: size * 0.3, height: size * 1.5)
+                        .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+                }
+            }
+            
+        case .colorChanger:
+            Circle()
+                .stroke(Color.purple, lineWidth: 3)
+                .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+                .opacity(isAnimatingSpecial ? 0.7 : 1.0)
+                .frame(width: size * 0.9, height: size * 0.9)
+                .overlay(
+                    Text("🔄")
+                        .font(.system(size: size * 0.3))
+                        .opacity(isAnimatingSpecial ? 0.8 : 0.5)
+                )
+                
+        case .areaClearer(let radius):
+            Circle()
+                .stroke(Color.orange, lineWidth: 2)
+                .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
+                .opacity(isAnimatingSpecial ? 0.6 : 1.0)
+                .frame(width: size * CGFloat(radius) * 0.8, height: size * CGFloat(radius) * 0.8)
+                
+        case .multiplier:
+            Circle()
+                .stroke(Color.yellow, lineWidth: 3)
+                .scaleEffect(isAnimatingSpecial ? 1.1 : 1.0)
+                .opacity(isAnimatingSpecial ? 0.8 : 1.0)
+                .frame(width: size * 0.9, height: size * 0.9)
+                .overlay(
+                    Text("×2")
+                        .font(.system(size: size * 0.25, weight: .bold))
+                        .foregroundColor(.yellow)
+                        .opacity(isAnimatingSpecial ? 0.9 : 0.7)
+                )
+        }
+    }
+    
+    private func startSpecialAnimations() {
+        if rune.specialEffect == .bomb {
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                isAnimatingBomb = true
+            }
+        } else if rune.specialEffect != nil {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                isAnimatingSpecial = true
             }
         }
     }

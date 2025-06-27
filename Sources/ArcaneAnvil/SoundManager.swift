@@ -11,6 +11,7 @@ enum SoundEffect {
     case levelComplete
     case gameOver
     case buttonClick
+    case achievement
 }
 
 /// A simple class to manage playing sound effects.
@@ -55,6 +56,8 @@ class SoundManager {
                 return ("gameOver.mp3", 1.0)
             case .buttonClick:
                 return ("click.wav", 1.0)
+            case .achievement:
+                return ("achievement.wav", 1.0)
             }
         }()
         
@@ -117,6 +120,8 @@ class SoundManager {
             return "Game Over"
         case .buttonClick:
             return "UI Button Click"
+        case .achievement:
+            return "Achievement"
         }
     }
 } 
