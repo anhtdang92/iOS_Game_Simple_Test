@@ -38,9 +38,15 @@ class GameManager: ObservableObject {
     /// The cards available for the player to choose from at the start of a run.
     @Published var starterSelection: [EnchantmentCard] = []
     
+    // A weak reference to the game board to avoid retain cycles.
+    private weak var gameBoard: GameBoard?
+    
     init() {
         self.highScore = PersistenceManager.shared.loadHighScore()
-        startNewRun() // Start a proper run instead of giving all cards
+    }
+    
+    func setup(with gameBoard: GameBoard) {
+        self.gameBoard = gameBoard
     }
     
     /// Decrements the move counter by one.
@@ -185,6 +191,7 @@ class GameManager: ObservableObject {
         activeEnchantments = [card]
         gold = 15 // Start with enough gold for a reroll or a cheap card
         gameState = .playing
+        gameBoard?.fillBoard()
     }
     
     /// Resets the game to its initial state for a new run.

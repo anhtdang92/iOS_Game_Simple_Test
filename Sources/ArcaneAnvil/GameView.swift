@@ -55,6 +55,10 @@ struct GameView: View {
         }
         .padding()
         .background(Color(red: 0.1, green: 0.1, blue: 0.15).ignoresSafeArea())
+        .onAppear {
+            gameManager.setup(with: gameBoard)
+            startNewRun()
+        }
     }
     
     private var gameHeader: some View {
@@ -149,10 +153,6 @@ struct GameView: View {
             )
             .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.opacity(0.8))
-        .foregroundColor(.white)
-        .transition(.opacity.animation(.easeIn))
     }
     
     @ViewBuilder
@@ -173,129 +173,13 @@ struct GameView: View {
     private var shopOverlay: some View {
         if gameManager.gameState == .shop {
             VStack(spacing: 15) {
-                Text("Shop")
-                    .font(.system(size: 50, weight: .bold, design: .rounded))
-                
-                Text("Gold: \(gameManager.gold)")
-                    .font(.title)
-                
+                shopHeader
                 Spacer()
-                
-                ForEach(gameManager.shopSelection) { card in
-                    VStack(alignment: .leading) {
-                        Text(card.name)
-                            .font(.title2).bold()
-                        Text(card.description)
-                            .font(.body)
-                        
-                        Button(action: {
-                            SoundManager.shared.playSound(.buyCard)
-                            HapticManager.shared.trigger(.success)
-                            gameManager.buyCard(card)
-                        }) {
-                            Text("Buy (\(card.cost) Gold)")
-                                .padding(10)
-                                .frame(maxWidth: .infinity)
-                                .background(gameManager.gold >= card.cost ? Color.blue : Color.gray)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                        .font(.title2)
-                        .disabled(gameManager.gold < card.cost)
-                    }
-                    .padding()
-                    .background(Color.black.opacity(0.4))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.blue.opacity(0.7), lineWidth: 2)
-                    )
-                    .shadow(color: .blue.opacity(0.3), radius: 5, x: 3, y: 3)
-                    .transition(.asymmetric(insertion: .scale, removal: .opacity))
-                }
-                .animation(.default, value: gameManager.shopSelection)
-                
+                shopItemsForSale
                 Spacer()
-
-                if !gameManager.activeEnchantments.isEmpty {
-                    Text("Your Enchantments")
-                        .font(.title2)
-                        .padding(.top)
-                    
-                    ForEach(gameManager.activeEnchantments) { card in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(card.displayName)
-                                    .bold()
-                                Text(card.description)
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                            VStack(spacing: 8) {
-                                Button("Sell (+\(card.cost / 2)G)") {
-                                    SoundManager.shared.playSound(.buttonClick)
-                                    gameManager.sellCard(card)
-                                }
-                                .font(.body)
-                                .padding(8)
-                                .background(Color.red.opacity(0.2))
-                                .cornerRadius(8)
-                                .foregroundColor(.red)
-                                
-                                if let upgradeCost = card.upgradeCost {
-                                    Button("Upgrade (\(upgradeCost)G)") {
-                                        gameManager.upgradeCard(card)
-                                    }
-                                    .font(.body)
-                                    .padding(8)
-                                    .background(gameManager.gold >= upgradeCost ? Color.green.opacity(0.3) : Color.gray.opacity(0.2))
-                                    .cornerRadius(8)
-                                    .foregroundColor(gameManager.gold >= upgradeCost ? .green : .gray)
-                                    .disabled(gameManager.gold < upgradeCost)
-                                } else {
-                                    Text("MAX LEVEL")
-                                        .font(.caption)
-                                        .bold()
-                                        .foregroundColor(.yellow)
-                                }
-                            }
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.4))
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                        )
-                        .transition(.asymmetric(insertion: .scale, removal: .opacity))
-                    }
-                }
-                .animation(.default, value: gameManager.activeEnchantments)
-                
+                ownedEnchantmentsSection
                 Spacer()
-                
-                VStack(spacing: 20) {
-                    Button("Reroll (10 Gold)") {
-                        SoundManager.shared.playSound(.buttonClick)
-                        HapticManager.shared.trigger(.light)
-                        gameManager.rerollShop()
-                    }
-                    .font(.title2)
-                    .padding(10)
-                    .background(gameManager.gold < 10 ? Color.gray : Color.orange)
-                    .cornerRadius(10)
-                    .disabled(gameManager.gold < 10)
-
-                    Button("Next Level") {
-                        SoundManager.shared.playSound(.buttonClick)
-                        HapticManager.shared.trigger(.light)
-                        prepareNextLevel()
-                    }
-                    .font(.largeTitle)
-                    .padding()
-                }
-                .padding()
+                shopActionButtons
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -303,6 +187,141 @@ struct GameView: View {
             .foregroundColor(.white)
             .transition(.opacity.animation(.easeIn))
         }
+    }
+    
+    // MARK: - Shop Subviews
+    
+    private var shopHeader: some View {
+        VStack {
+            Text("Shop")
+                .font(.system(size: 50, weight: .bold, design: .rounded))
+            
+            Text("Gold: \(gameManager.gold)")
+                .font(.title)
+        }
+    }
+    
+    private var shopItemsForSale: some View {
+        Group {
+            ForEach(gameManager.shopSelection) { card in
+                VStack(alignment: .leading) {
+                    Text(card.name)
+                        .font(.title2).bold()
+                    Text(card.description)
+                        .font(.body)
+                    
+                    Button(action: {
+                        SoundManager.shared.playSound(.buyCard)
+                        HapticManager.shared.trigger(.success)
+                        gameManager.buyCard(card)
+                    }) {
+                        Text("Buy (\(card.cost) Gold)")
+                            .padding(10)
+                            .frame(maxWidth: .infinity)
+                            .background(gameManager.gold >= card.cost ? Color.blue : Color.gray)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .font(.title2)
+                    .disabled(gameManager.gold < card.cost)
+                }
+                .padding()
+                .background(Color.black.opacity(0.4))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.blue.opacity(0.7), lineWidth: 2)
+                )
+                .shadow(color: .blue.opacity(0.3), radius: 5, x: 3, y: 3)
+                .transition(.asymmetric(insertion: .scale, removal: .opacity))
+            }
+        }
+        .animation(.default, value: gameManager.shopSelection)
+    }
+    
+    @ViewBuilder
+    private var ownedEnchantmentsSection: some View {
+        if !gameManager.activeEnchantments.isEmpty {
+            Group {
+                Text("Your Enchantments")
+                    .font(.title2)
+                    .padding(.top)
+                
+                ForEach(gameManager.activeEnchantments) { card in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(card.displayName)
+                                .bold()
+                            Text(card.description)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        VStack(spacing: 8) {
+                            Button("Sell (+\(card.cost / 2)G)") {
+                                SoundManager.shared.playSound(.buttonClick)
+                                gameManager.sellCard(card)
+                            }
+                            .font(.body)
+                            .padding(8)
+                            .background(Color.red.opacity(0.2))
+                            .cornerRadius(8)
+                            .foregroundColor(.red)
+                            
+                            if let upgradeCost = card.upgradeCost {
+                                Button("Upgrade (\(upgradeCost)G)") {
+                                    gameManager.upgradeCard(card)
+                                }
+                                .font(.body)
+                                .padding(8)
+                                .background(gameManager.gold >= upgradeCost ? Color.green.opacity(0.3) : Color.gray.opacity(0.2))
+                                .cornerRadius(8)
+                                .foregroundColor(gameManager.gold >= upgradeCost ? .green : .gray)
+                                .disabled(gameManager.gold < upgradeCost)
+                            } else {
+                                Text("MAX LEVEL")
+                                    .font(.caption)
+                                    .bold()
+                                    .foregroundColor(.yellow)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.4))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    )
+                    .transition(.asymmetric(insertion: .scale, removal: .opacity))
+                }
+            }
+            .animation(.default, value: gameManager.activeEnchantments)
+        }
+    }
+    
+    private var shopActionButtons: some View {
+        VStack(spacing: 20) {
+            Button("Reroll (10 Gold)") {
+                SoundManager.shared.playSound(.buttonClick)
+                HapticManager.shared.trigger(.light)
+                gameManager.rerollShop()
+            }
+            .font(.title2)
+            .padding(10)
+            .background(gameManager.gold < 10 ? Color.gray : Color.orange)
+            .cornerRadius(10)
+            .disabled(gameManager.gold < 10)
+
+            Button("Next Level") {
+                SoundManager.shared.playSound(.buttonClick)
+                HapticManager.shared.trigger(.light)
+                prepareNextLevel()
+            }
+            .font(.largeTitle)
+            .padding()
+        }
+        .padding()
     }
     
     @ViewBuilder
