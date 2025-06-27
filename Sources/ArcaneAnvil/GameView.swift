@@ -116,9 +116,9 @@ struct GameView: View {
     private var gameGridView: some View {
         GeometryReader { geometry in
             Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-                ForEach(0..<gameBoard.width, id: \.self) { x in
+                ForEach(0..<gameBoard.height, id: \.self) { y in
                     GridRow {
-                        ForEach(0..<gameBoard.height, id: \.self) { y in
+                        ForEach(0..<gameBoard.width, id: \.self) { x in
                             let coord = Coordinate(x: x, y: y)
                             if let rune = gameBoard.grid[x][y] {
                                 RuneView(rune: rune, size: runeFrameSize)
@@ -736,9 +736,21 @@ struct RuneView: View {
     
     var body: some View {
         ZStack {
-            Image(String(describing: rune.type))
-                .resizable()
-                .scaledToFit()
+            // Use colored circles instead of images since no image assets exist
+            Circle()
+                .fill(runeColor)
+                .frame(width: size * 0.8, height: size * 0.8)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                )
+                .shadow(color: runeColor.opacity(0.5), radius: 3, x: 2, y: 2)
+            
+            // Add a symbol or text to distinguish rune types
+            Text(runeSymbol)
+                .font(.system(size: size * 0.4, weight: .bold))
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.5), radius: 1, x: 1, y: 1)
             
             if rune.specialEffect == .bomb {
                 Circle()
@@ -754,6 +766,26 @@ struct RuneView: View {
                     isAnimatingBomb = true
                 }
             }
+        }
+    }
+    
+    private var runeColor: Color {
+        switch rune.type {
+        case .fire: return .red
+        case .water: return .blue
+        case .earth: return .brown
+        case .air: return .cyan
+        case .light: return .yellow
+        }
+    }
+    
+    private var runeSymbol: String {
+        switch rune.type {
+        case .fire: return "🔥"
+        case .water: return "💧"
+        case .earth: return "🌍"
+        case .air: return "💨"
+        case .light: return "✨"
         }
     }
 }
