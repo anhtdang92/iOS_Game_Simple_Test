@@ -139,20 +139,20 @@ struct GameView: View {
                     }
                 }
             }
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.black.opacity(0.4)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 4)
-            )
-            .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
         }
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.black.opacity(0.4)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.white.opacity(0.1), lineWidth: 4)
+        )
+        .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
     }
     
     @ViewBuilder

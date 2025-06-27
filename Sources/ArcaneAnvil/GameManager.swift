@@ -27,7 +27,7 @@ class GameManager: ObservableObject {
     @Published var scoreTarget: Int = 1000 // The score needed to clear the level
     @Published var movesRemaining: Int = 20 // Starting moves for the first level
     @Published var highScore: Int = 0
-    @Published var gameState: GameState = .playing
+    @Published var gameState: GameState = .choosingStarter
     
     /// The player's currently active enchantment cards.
     @Published var activeEnchantments: [EnchantmentCard] = []
