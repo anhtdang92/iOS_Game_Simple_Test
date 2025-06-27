@@ -2,7 +2,7 @@ import Foundation
 
 /// Represents a daily challenge
 struct DailyChallenge: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let title: String
     let description: String
     let type: ChallengeType

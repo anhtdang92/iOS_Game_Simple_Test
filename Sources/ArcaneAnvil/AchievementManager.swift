@@ -2,7 +2,7 @@ import Foundation
 
 /// Represents an achievement that can be unlocked by the player
 struct Achievement: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let name: String
     let description: String
     let icon: String // SF Symbol name

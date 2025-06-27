@@ -1,11 +1,11 @@
 import Foundation
 
 /// Defines the rarity of enchantment cards
-enum CardRarity: CaseIterable {
-    case common
-    case rare
-    case epic
-    case legendary
+enum CardRarity: String, CaseIterable, Codable {
+    case common = "Common"
+    case rare = "Rare"
+    case epic = "Epic"
+    case legendary = "Legendary"
     
     var color: String {
         switch self {

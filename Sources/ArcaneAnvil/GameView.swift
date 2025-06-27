@@ -158,7 +158,7 @@ struct GameView: View {
             Spacer()
         }
         .padding(.vertical, 5)
-        .onChange(of: gameManager.score) { newScore in
+        .onChange(of: gameManager.score) { _, newScore in
             animateScoreChange(from: animatedScore, to: Double(newScore))
         }
     }
