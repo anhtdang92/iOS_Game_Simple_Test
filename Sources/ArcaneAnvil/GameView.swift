@@ -53,6 +53,7 @@ struct GameView: View {
     @State private var showLoadingScreen: Bool = true
     @State private var loadingProgress: Double = 0
     @State private var showDailyChallenges: Bool = false
+    @State private var lastRunePositions: [UUID: Coordinate] = [:]
     
     private let runeFrameSize: CGFloat = 40
     private let gridSpacing: CGFloat = 4
@@ -184,11 +185,49 @@ struct GameView: View {
                         ForEach(0..<gameBoard.width, id: \.self) { x in
                             let coord = Coordinate(x: x, y: y)
                             if let rune = gameBoard.grid[x][y] {
+                                let runeId = rune.id
+                                let previousPosition = lastRunePositions[runeId] ?? coord
+                                let yOffset = CGFloat(previousPosition.y - coord.y) * (runeFrameSize + gridSpacing)
+                                
                                 RuneView(rune: rune, size: runeFrameSize)
                                     .border(Color.yellow, width: selectedCoordinate == coord ? 3 : 0)
                                     .scaleEffect(selectedCoordinate == coord ? 0.9 : 1.0)
                                     .animation(.spring(response: 0.2, dampingFraction: 0.5), value: selectedCoordinate)
                                     .transition(.scale.animation(.spring(response: 0.3, dampingFraction: 0.6)))
+                                    .offset(y: yOffset)
+                                    .animation(.interpolatingSpring(stiffness: 180, damping: 18), value: coord)
+                                    .gesture(
+                                        DragGesture(minimumDistance: 10)
+                                            .onChanged { value in
+                                                selectedCoordinate = coord
+                                            }
+                                            .onEnded { value in
+                                                let dragThreshold: CGFloat = runeFrameSize / 2
+                                                let dx = value.translation.width
+                                                let dy = value.translation.height
+                                                var target: Coordinate? = nil
+                                                if abs(dx) > abs(dy) {
+                                                    if dx > dragThreshold, coord.x < gameBoard.width - 1 {
+                                                        target = Coordinate(x: coord.x + 1, y: coord.y)
+                                                    } else if dx < -dragThreshold, coord.x > 0 {
+                                                        target = Coordinate(x: coord.x - 1, y: coord.y)
+                                                    }
+                                                } else {
+                                                    if dy > dragThreshold, coord.y < gameBoard.height - 1 {
+                                                        target = Coordinate(x: coord.x, y: coord.y + 1)
+                                                    } else if dy < -dragThreshold, coord.y > 0 {
+                                                        target = Coordinate(x: coord.x, y: coord.y - 1)
+                                                    }
+                                                }
+                                                if let target = target {
+                                                    HapticManager.shared.trigger(.selection)
+                                                    Task {
+                                                        await processMove(from: coord, to: target)
+                                                    }
+                                                }
+                                                selectedCoordinate = nil
+                                            }
+                                    )
                                     .onTapGesture {
                                         HapticManager.shared.trigger(.selection)
                                         runeTapped(at: coord)
@@ -216,6 +255,17 @@ struct GameView: View {
                 .stroke(Color.white.opacity(0.1), lineWidth: 4)
         )
         .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+        .onChange(of: gameBoard.grid) { _, _ in
+            var newPositions: [UUID: Coordinate] = [:]
+            for x in 0..<gameBoard.width {
+                for y in 0..<gameBoard.height {
+                    if let rune = gameBoard.grid[x][y] {
+                        newPositions[rune.id] = Coordinate(x: x, y: y)
+                    }
+                }
+            }
+            lastRunePositions = newPositions
+        }
     }
     
     @ViewBuilder
@@ -1025,57 +1075,55 @@ struct GameView: View {
                         .rotationEffect(.degrees(particle.rotation))
                         .opacity(particle.opacity)
                 }
-                
                 // Level complete content
-                VStack(spacing: 20) {
-                    Text("LEVEL COMPLETE!")
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.yellow, .orange, .red],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: .black.opacity(0.8), radius: 5, x: 3, y: 3)
-                    
-                    Text("Score: \(gameManager.score)")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                    
-                    Text("Level \(gameManager.currentLevel)")
-                        .font(.title3)
-                        .foregroundColor(.gray)
-                    
-                    Button("Continue") {
-                        showLevelComplete = false
-                        confettiParticles.removeAll()
-                        gameManager.completeLevel()
-                    }
-                    .font(.title2)
-                    .padding()
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(15)
-                    .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
-                }
-                .padding(40)
-                .background(
-                    RoundedRectangle(cornerRadius: 25)
-                        .fill(Color.black.opacity(0.9))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 25)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.yellow, .orange, .red],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 4
+                ScrollView {
+                    VStack(spacing: 20) {
+                        Text("LEVEL COMPLETE!")
+                            .font(.system(size: 36, weight: .black, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange, .red],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
-                        )
-                )
-                .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                            )
+                            .shadow(color: .black.opacity(0.8), radius: 5, x: 3, y: 3)
+                        Text("Score: \(gameManager.score)")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                        Text("Level \(gameManager.currentLevel)")
+                            .font(.title3)
+                            .foregroundColor(.gray)
+                        Button("Continue") {
+                            showLevelComplete = false
+                            confettiParticles.removeAll()
+                            gameManager.completeLevel()
+                        }
+                        .font(.title2)
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
+                        .shadow(color: .black.opacity(0.3), radius: 5, x: 2, y: 2)
+                    }
+                    .padding(40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(Color.black.opacity(0.9))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 25)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange, .red],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 4
+                                    )
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+                }
             }
             .transition(.asymmetric(
                 insertion: .scale.animation(.spring(response: 0.6, dampingFraction: 0.8)),
