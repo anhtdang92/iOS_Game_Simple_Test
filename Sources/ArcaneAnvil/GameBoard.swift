@@ -27,11 +27,41 @@ class GameBoard: ObservableObject {
     func fillBoard() {
         for x in 0..<width {
             for y in 0..<height {
-                // To avoid initial matches, we can add more complex logic here later.
-                // For now, a simple random fill is fine for building the core logic.
-                grid[x][y] = createRandomRune()
+                // Create a rune that won't create initial matches
+                grid[x][y] = createValidRune(at: Coordinate(x: x, y: y))
             }
         }
+    }
+    
+    /// Creates a rune that won't create matches at the given position
+    private func createValidRune(at coordinate: Coordinate) -> Rune {
+        let allTypes = RuneType.allCases
+        var validTypes = allTypes
+        
+        // Check horizontal matches (left side)
+        if coordinate.x >= 2 {
+            let left1 = grid[coordinate.x - 1][coordinate.y]?.type
+            let left2 = grid[coordinate.x - 2][coordinate.y]?.type
+            if left1 == left2, let leftType = left1 {
+                validTypes.removeAll { $0 == leftType }
+            }
+        }
+        
+        // Check vertical matches (top side)
+        if coordinate.y >= 2 {
+            let top1 = grid[coordinate.x][coordinate.y - 1]?.type
+            let top2 = grid[coordinate.x][coordinate.y - 2]?.type
+            if top1 == top2, let topType = top1 {
+                validTypes.removeAll { $0 == topType }
+            }
+        }
+        
+        // If no valid types remain, use any type (this shouldn't happen in practice)
+        guard !validTypes.isEmpty else {
+            return createRandomRune()
+        }
+        
+        return Rune(type: validTypes.randomElement() ?? .fire)
     }
     
     /// Swaps two runes on the board.
@@ -223,6 +253,20 @@ class GameBoard: ObservableObject {
     
     /// Fills any remaining empty spaces at the top of the board with new runes.
     func refillBoard() {
+        for x in 0..<width {
+            for y in 0..<height {
+                if grid[x][y] == nil {
+                    grid[x][y] = createValidRune(at: Coordinate(x: x, y: y))
+                }
+            }
+        }
+        
+        // Safety check: ensure board is completely filled
+        ensureBoardFilled()
+    }
+    
+    /// Ensures the board is completely filled with runes
+    private func ensureBoardFilled() {
         for x in 0..<width {
             for y in 0..<height {
                 if grid[x][y] == nil {

@@ -54,6 +54,7 @@ struct GameView: View {
     @State private var loadingProgress: Double = 0
     @State private var showDailyChallenges: Bool = false
     @State private var lastRunePositions: [UUID: Coordinate] = [:]
+    @State private var draggedTileData: (rune: Rune, position: CGPoint)? = nil
     
     private let runeFrameSize: CGFloat = 40
     private let gridSpacing: CGFloat = 4
@@ -89,20 +90,35 @@ struct GameView: View {
         .background(Color(red: 0.1, green: 0.1, blue: 0.15).ignoresSafeArea())
         .onAppear {
             startLoadingSequence()
+            ensureBoardFilled()
         }
     }
     
     private var gameHeader: some View {
-        VStack {
+        VStack(spacing: 0) {
             HStack {
                 Button(action: {
                     SoundManager.shared.playSound(.buttonClick)
                     HapticManager.shared.trigger(.light)
                     showDailyChallenges = true
                 }) {
-                    Image(systemName: "calendar")
-                        .font(.title2)
-                        .foregroundColor(.orange)
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.orange.opacity(0.8), .red.opacity(0.6)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 44, height: 44)
+                            .shadow(color: .orange.opacity(0.3), radius: 4, x: 2, y: 2)
+                        
+                        Image(systemName: "calendar")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 1, x: 1, y: 1)
+                    }
                 }
                 
                 Spacer()
@@ -112,159 +128,261 @@ struct GameView: View {
                     HapticManager.shared.trigger(.light)
                     showSettings = true
                 }) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.title2)
-                        .foregroundColor(.gray)
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.gray.opacity(0.8), .black.opacity(0.6)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 44, height: 44)
+                            .shadow(color: .gray.opacity(0.3), radius: 4, x: 2, y: 2)
+                        
+                        Image(systemName: "gearshape.fill")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 1, x: 1, y: 1)
+                    }
                 }
             }
             .padding(.horizontal)
             
-            Text("Arcane Anvil")
-                .font(.system(size: 48, weight: .bold, design: .serif))
-                .shadow(color: .blue.opacity(0.8), radius: 3, x: 2, y: 2)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.cyan, .white, .blue],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            VStack(spacing: 8) {
+                Text("Arcane Anvil")
+                    .font(.system(size: 52, weight: .black, design: .serif))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.cyan, .white, .blue, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
-                .padding(.bottom, 2)
-            
-            Text("by Dang Production")
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundColor(.gray)
-                .padding(.bottom, 8)
+                    .shadow(color: .blue.opacity(0.8), radius: 8, x: 4, y: 4)
+                    .shadow(color: .purple.opacity(0.6), radius: 4, x: 2, y: 2)
+                
+                Text("by Dang Production")
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.gray.opacity(0.8), .white.opacity(0.6)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .padding(.bottom, 4)
+            }
+            .padding(.vertical, 8)
             
             gameStats
             
             Text("High Score: \(gameManager.highScore)")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .padding(.top, 5)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.yellow.opacity(0.9), .orange.opacity(0.7)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .padding(.top, 8)
+                .padding(.bottom, 4)
         }
         .foregroundColor(.white)
     }
     
     private var gameStats: some View {
-        HStack {
-            Spacer()
-            statView(icon: "star.fill", value: "\(Int(animatedScore))", label: "Score")
-            Spacer()
-            statView(icon: "target", value: "\(gameManager.scoreTarget)", label: "Target")
-            Spacer()
-            statView(icon: "arrow.up.circle.fill", value: "\(gameManager.currentLevel)", label: "Level")
-            Spacer()
-            statView(icon: "arrow.2.squarepath", value: "\(gameManager.movesRemaining)", label: "Moves")
-            Spacer()
+        HStack(spacing: 16) {
+            statView(icon: "star.fill", value: "\(Int(animatedScore))", label: "Score", color: .yellow)
+            statView(icon: "target", value: "\(gameManager.scoreTarget)", label: "Target", color: .red)
+            statView(icon: "arrow.up.circle.fill", value: "\(gameManager.currentLevel)", label: "Level", color: .blue)
+            statView(icon: "arrow.2.squarepath", value: "\(gameManager.movesRemaining)", label: "Moves", color: .green)
         }
-        .padding(.vertical, 5)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.1),
+                            Color.white.opacity(0.05),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
         .onChange(of: gameManager.score) { _, newScore in
             animateScoreChange(from: animatedScore, to: Double(newScore))
         }
     }
     
-    private func statView(icon: String, value: String, label: String) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(.yellow.opacity(0.8))
+    private func statView(icon: String, value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [color.opacity(0.8), color.opacity(0.4)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 36, height: 36)
+                    .shadow(color: color.opacity(0.3), radius: 3, x: 1, y: 1)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
+            }
+            
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [color.opacity(0.9), color.opacity(0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
+            
             Text(label)
-                .font(.caption)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
                 .textCase(.uppercase)
+                .foregroundColor(.white.opacity(0.8))
+                .tracking(0.5)
         }
     }
     
     private var gameGridView: some View {
         GeometryReader { geometry in
-            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-                ForEach(0..<gameBoard.height, id: \.self) { y in
-                    GridRow {
-                        ForEach(0..<gameBoard.width, id: \.self) { x in
-                            let coord = Coordinate(x: x, y: y)
-                            if let rune = gameBoard.grid[x][y] {
-                                let runeId = rune.id
-                                let previousPosition = lastRunePositions[runeId] ?? coord
-                                let yOffset = CGFloat(previousPosition.y - coord.y) * (runeFrameSize + gridSpacing)
-                                
-                                RuneView(rune: rune, size: runeFrameSize)
-                                    .border(Color.yellow, width: selectedCoordinate == coord ? 3 : 0)
-                                    .scaleEffect(selectedCoordinate == coord ? 0.9 : 1.0)
-                                    .animation(.spring(response: 0.2, dampingFraction: 0.5), value: selectedCoordinate)
-                                    .transition(.scale.animation(.spring(response: 0.3, dampingFraction: 0.6)))
-                                    .offset(y: yOffset)
-                                    .animation(.interpolatingSpring(stiffness: 180, damping: 18), value: coord)
-                                    .gesture(
-                                        DragGesture(minimumDistance: 10)
-                                            .onChanged { value in
-                                                selectedCoordinate = coord
-                                            }
-                                            .onEnded { value in
-                                                let dragThreshold: CGFloat = runeFrameSize / 2
-                                                let dx = value.translation.width
-                                                let dy = value.translation.height
-                                                var target: Coordinate? = nil
-                                                if abs(dx) > abs(dy) {
-                                                    if dx > dragThreshold, coord.x < gameBoard.width - 1 {
-                                                        target = Coordinate(x: coord.x + 1, y: coord.y)
-                                                    } else if dx < -dragThreshold, coord.x > 0 {
-                                                        target = Coordinate(x: coord.x - 1, y: coord.y)
-                                                    }
-                                                } else {
-                                                    if dy > dragThreshold, coord.y < gameBoard.height - 1 {
-                                                        target = Coordinate(x: coord.x, y: coord.y + 1)
-                                                    } else if dy < -dragThreshold, coord.y > 0 {
-                                                        target = Coordinate(x: coord.x, y: coord.y - 1)
-                                                    }
+            ZStack {
+                // Background grid
+                Grid(horizontalSpacing: gridSpacing, verticalSpacing: gridSpacing) {
+                    ForEach(0..<gameBoard.height, id: \.self) { y in
+                        GridRow {
+                            ForEach(0..<gameBoard.width, id: \.self) { x in
+                                let coord = Coordinate(x: x, y: y)
+                                if let rune = gameBoard.grid[x][y] {
+                                    let runeId = rune.id
+                                    let previousPosition = lastRunePositions[runeId] ?? coord
+                                    let yOffset = CGFloat(previousPosition.y - coord.y) * (runeFrameSize + gridSpacing)
+                                    
+                                    RuneView(rune: rune, size: runeFrameSize)
+                                        .border(Color.yellow, width: selectedCoordinate == coord ? 3 : 0)
+                                        .scaleEffect(selectedCoordinate == coord ? 0.9 : 1.0)
+                                        .animation(.spring(response: 0.2, dampingFraction: 0.5), value: selectedCoordinate)
+                                        .transition(.scale.animation(.spring(response: 0.3, dampingFraction: 0.6)))
+                                        .offset(y: yOffset)
+                                        .animation(.interpolatingSpring(stiffness: 200, damping: 20), value: coord)
+                                        .animation(.interpolatingSpring(stiffness: 200, damping: 20), value: yOffset)
+                                        .gesture(
+                                            DragGesture(minimumDistance: 5)
+                                                .onChanged { value in
+                                                    handleDragChanged(value: value, coordinate: coord)
                                                 }
-                                                if let target = target {
-                                                    HapticManager.shared.trigger(.selection)
-                                                    Task {
-                                                        await processMove(from: coord, to: target)
-                                                    }
+                                                .onEnded { value in
+                                                    handleDragEnded(value: value, coordinate: coord)
                                                 }
-                                                selectedCoordinate = nil
-                                            }
-                                    )
-                                    .onTapGesture {
-                                        HapticManager.shared.trigger(.selection)
-                                        runeTapped(at: coord)
-                                    }
-                                    .disabled(gameManager.gameState != .playing)
-                            } else {
-                                // Placeholder for an empty space
-                                Color.clear.frame(width: 40, height: 40)
+                                        )
+                                        .onTapGesture {
+                                            HapticManager.shared.trigger(.selection)
+                                            runeTapped(at: coord)
+                                        }
+                                        .disabled(gameManager.gameState != .playing)
+                                } else {
+                                    // Placeholder for an empty space - should not happen with proper fill
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.gray.opacity(0.1))
+                                        .frame(width: runeFrameSize, height: runeFrameSize)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                        )
+                                }
                             }
                         }
                     }
                 }
+                
+                // Dragged tile overlay
+                if let draggedTile = draggedTileData {
+                    RuneView(rune: draggedTile.rune, size: runeFrameSize)
+                        .scaleEffect(1.2)
+                        .shadow(color: .black.opacity(0.5), radius: 12, x: 0, y: 6)
+                        .position(draggedTile.position)
+                        .opacity(0.9)
+                        .animation(.easeOut(duration: 0.1), value: draggedTile.position)
+                }
             }
         }
         .background(
-            LinearGradient(
-                gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.black.opacity(0.4)]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.white.opacity(0.1), lineWidth: 4)
-        )
-        .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
-        .onChange(of: gameBoard.grid) { _, _ in
-            var newPositions: [UUID: Coordinate] = [:]
-            for x in 0..<gameBoard.width {
-                for y in 0..<gameBoard.height {
-                    if let rune = gameBoard.grid[x][y] {
-                        newPositions[rune.id] = Coordinate(x: x, y: y)
+            ZStack {
+                // Main background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.gray.opacity(0.4),
+                        Color.black.opacity(0.6),
+                        Color.gray.opacity(0.3)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                
+                // Subtle pattern overlay
+                GeometryReader { geometry in
+                    Path { path in
+                        let gridSize: CGFloat = 20
+                        for x in stride(from: 0, through: geometry.size.width, by: gridSize) {
+                            path.move(to: CGPoint(x: x, y: 0))
+                            path.addLine(to: CGPoint(x: x, y: geometry.size.height))
+                        }
+                        for y in stride(from: 0, through: geometry.size.height, by: gridSize) {
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
                     }
+                    .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
                 }
             }
-            lastRunePositions = newPositions
+        )
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.3),
+                            Color.white.opacity(0.1),
+                            Color.white.opacity(0.05)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+        )
+        .shadow(color: .black.opacity(0.6), radius: 15, x: 0, y: 8)
+        .onChange(of: gameBoard.grid) { _, _ in
+            updateLastRunePositions()
+            ensureBoardFilled()
         }
     }
     
@@ -967,13 +1085,9 @@ struct GameView: View {
     }
     
     /// Converts a grid coordinate to a screen-space point for animations.
-    private func coordinateToPoint(_ coord: Coordinate) -> CGPoint {
-        let totalGridWidth = (runeFrameSize * CGFloat(gameBoard.width)) + (gridSpacing * CGFloat(gameBoard.width - 1))
-        let startX = -totalGridWidth / 2 + runeFrameSize / 2
-        
-        let x = startX + (CGFloat(coord.x) * (runeFrameSize + gridSpacing))
-        let y = startX + (CGFloat(coord.y) * (runeFrameSize + gridSpacing))
-        
+    private func coordinateToPoint(_ coordinate: Coordinate) -> CGPoint {
+        let x = CGFloat(coordinate.x) * (runeFrameSize + gridSpacing) + runeFrameSize / 2
+        let y = CGFloat(coordinate.y) * (runeFrameSize + gridSpacing) + runeFrameSize / 2
         return CGPoint(x: x, y: y)
     }
     
@@ -1589,6 +1703,96 @@ struct GameView: View {
                 )
         )
     }
+    
+    private func handleDragChanged(value: DragGesture.Value, coordinate: Coordinate) {
+        guard let rune = gameBoard.grid[coordinate.x][coordinate.y] else { return }
+        
+        // Calculate the position for the dragged tile overlay
+        let basePosition = coordinateToPoint(coordinate)
+        let draggedPosition = CGPoint(
+            x: basePosition.x + value.translation.width,
+            y: basePosition.y + value.translation.height
+        )
+        
+        // Only show dragged tile if we've moved enough distance
+        if abs(value.translation.width) > 5 || abs(value.translation.height) > 5 {
+            draggedTileData = (rune: rune, position: draggedPosition)
+            selectedCoordinate = coordinate
+        }
+    }
+    
+    private func handleDragEnded(value: DragGesture.Value, coordinate: Coordinate) {
+        guard let draggedTile = draggedTileData else { 
+            // If no drag occurred, just select the tile
+            selectedCoordinate = coordinate
+            return 
+        }
+        
+        // Calculate the target coordinate based on drag direction
+        let dragThreshold: CGFloat = runeFrameSize / 3 // More sensitive threshold
+        let dx = value.translation.width
+        let dy = value.translation.height
+        var target: Coordinate? = nil
+        
+        if abs(dx) > abs(dy) {
+            if dx > dragThreshold, coordinate.x < gameBoard.width - 1 {
+                target = Coordinate(x: coordinate.x + 1, y: coordinate.y)
+            } else if dx < -dragThreshold, coordinate.x > 0 {
+                target = Coordinate(x: coordinate.x - 1, y: coordinate.y)
+            }
+        } else {
+            if dy > dragThreshold, coordinate.y < gameBoard.height - 1 {
+                target = Coordinate(x: coordinate.x, y: coordinate.y + 1)
+            } else if dy < -dragThreshold, coordinate.y > 0 {
+                target = Coordinate(x: coordinate.x, y: coordinate.y - 1)
+            }
+        }
+        
+        // Clear the dragged tile overlay with animation
+        withAnimation(.easeOut(duration: 0.2)) {
+            draggedTileData = nil
+        }
+        
+        // Process the move if we have a valid target
+        if let target = target {
+            HapticManager.shared.trigger(.selection)
+            Task {
+                await processMove(from: coordinate, to: target)
+            }
+        }
+        
+        selectedCoordinate = nil
+    }
+    
+    private func updateLastRunePositions() {
+        var newPositions: [UUID: Coordinate] = [:]
+        for x in 0..<gameBoard.width {
+            for y in 0..<gameBoard.height {
+                if let rune = gameBoard.grid[x][y] {
+                    newPositions[rune.id] = Coordinate(x: x, y: y)
+                }
+            }
+        }
+        lastRunePositions = newPositions
+    }
+    
+    private func ensureBoardFilled() {
+        // Check if any positions are empty and fill them
+        var needsRefill = false
+        for x in 0..<gameBoard.width {
+            for y in 0..<gameBoard.height {
+                if gameBoard.grid[x][y] == nil {
+                    needsRefill = true
+                    break
+                }
+            }
+            if needsRefill { break }
+        }
+        
+        if needsRefill {
+            gameBoard.refillBoard()
+        }
+    }
 }
 
 /// A view that represents a single rune.
@@ -1601,21 +1805,63 @@ struct RuneView: View {
     
     var body: some View {
         ZStack {
-            // Use colored circles instead of images since no image assets exist
+            // Background glow
             Circle()
-                .fill(runeColor)
-                .frame(width: size * 0.8, height: size * 0.8)
-                .overlay(
-                    Circle()
-                        .stroke(Color.white.opacity(0.3), lineWidth: 2)
-                )
-                .shadow(color: runeColor.opacity(0.5), radius: 3, x: 2, y: 2)
+                .fill(runeColor.opacity(0.3))
+                .frame(width: size * 1.2, height: size * 1.2)
+                .blur(radius: 8)
             
-            // Add a symbol or text to distinguish rune types
+            // Main tile background
+            RoundedRectangle(cornerRadius: size * 0.15)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            runeColor.opacity(0.9),
+                            runeColor.opacity(0.7),
+                            runeColor.opacity(0.5)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size * 0.9, height: size * 0.9)
+                .overlay(
+                    RoundedRectangle(cornerRadius: size * 0.15)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.6),
+                                    Color.white.opacity(0.2),
+                                    Color.clear
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 2
+                        )
+                )
+                .shadow(color: runeColor.opacity(0.6), radius: 6, x: 2, y: 3)
+            
+            // Inner highlight
+            RoundedRectangle(cornerRadius: size * 0.12)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.4),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .center
+                    )
+                )
+                .frame(width: size * 0.7, height: size * 0.7)
+            
+            // Rune symbol
             Text(runeSymbol)
-                .font(.system(size: size * 0.4, weight: .bold))
+                .font(.system(size: size * 0.45, weight: .bold))
                 .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 1, x: 1, y: 1)
+                .shadow(color: .black.opacity(0.7), radius: 2, x: 1, y: 1)
+                .shadow(color: runeColor.opacity(0.8), radius: 1, x: 0, y: 0)
             
             // Special effect overlays
             if let specialEffect = rune.specialEffect {
@@ -1632,59 +1878,201 @@ struct RuneView: View {
     private func specialEffectOverlay(for effect: SpecialEffect) -> some View {
         switch effect {
         case .bomb:
-            Circle()
-                .stroke(Color.red, lineWidth: isAnimatingBomb ? 4 : 2)
-                .scaleEffect(isAnimatingBomb ? 1.1 : 1.0)
-                .opacity(isAnimatingBomb ? 0.5 : 1.0)
-                .frame(width: size * 0.9, height: size * 0.9)
+            ZStack {
+                // Bomb glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.red.opacity(0.6), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size * 0.6
+                        )
+                    )
+                    .frame(width: size * 1.2, height: size * 1.2)
+                    .scaleEffect(isAnimatingBomb ? 1.3 : 1.0)
+                    .opacity(isAnimatingBomb ? 0.8 : 0.4)
+                
+                // Bomb border
+                RoundedRectangle(cornerRadius: size * 0.15)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.red, Color.orange, Color.red],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isAnimatingBomb ? 4 : 2
+                    )
+                    .frame(width: size * 0.95, height: size * 0.95)
+                    .scaleEffect(isAnimatingBomb ? 1.1 : 1.0)
+                    .opacity(isAnimatingBomb ? 0.8 : 1.0)
+                
+                // Bomb icon
+                Image(systemName: "burst.fill")
+                    .font(.system(size: size * 0.25, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
+                    .scaleEffect(isAnimatingBomb ? 1.2 : 1.0)
+            }
                 
         case .lineClearer(let direction):
-            Group {
+            ZStack {
+                // Line clearer glow
                 if direction == .horizontal || direction == .cross {
                     Rectangle()
-                        .fill(Color.blue.opacity(0.3))
-                        .frame(width: size * 1.5, height: size * 0.3)
-                        .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.6), Color.cyan.opacity(0.3)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: size * 1.8, height: size * 0.4)
+                        .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
+                        .opacity(isAnimatingSpecial ? 0.7 : 0.4)
                 }
                 if direction == .vertical || direction == .cross {
                     Rectangle()
-                        .fill(Color.blue.opacity(0.3))
-                        .frame(width: size * 0.3, height: size * 1.5)
-                        .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.6), Color.cyan.opacity(0.3)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: size * 0.4, height: size * 1.8)
+                        .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
+                        .opacity(isAnimatingSpecial ? 0.7 : 0.4)
                 }
+                
+                // Line clearer icon
+                Image(systemName: direction == .cross ? "arrow.up.left.and.arrow.down.right" : 
+                              direction == .horizontal ? "arrow.left.and.right" : "arrow.up.and.down")
+                    .font(.system(size: size * 0.25, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
+                    .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
             }
             
         case .colorChanger:
-            Circle()
-                .stroke(Color.purple, lineWidth: 3)
-                .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
-                .opacity(isAnimatingSpecial ? 0.7 : 1.0)
-                .frame(width: size * 0.9, height: size * 0.9)
-                .overlay(
-                    Text("🔄")
-                        .font(.system(size: size * 0.3))
-                        .opacity(isAnimatingSpecial ? 0.8 : 0.5)
-                )
+            ZStack {
+                // Color changer glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.purple.opacity(0.6), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size * 0.6
+                        )
+                    )
+                    .frame(width: size * 1.2, height: size * 1.2)
+                    .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
+                    .opacity(isAnimatingSpecial ? 0.8 : 0.4)
+                
+                // Color changer border
+                RoundedRectangle(cornerRadius: size * 0.15)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.purple, Color(red: 1.0, green: 0.0, blue: 1.0), Color.purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 3
+                    )
+                    .frame(width: size * 0.95, height: size * 0.95)
+                    .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+                    .opacity(isAnimatingSpecial ? 0.8 : 1.0)
+                
+                // Color changer icon
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: size * 0.25, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
+                    .rotationEffect(.degrees(isAnimatingSpecial ? 180 : 0))
+            }
                 
         case .areaClearer(let radius):
-            Circle()
-                .stroke(Color.orange, lineWidth: 2)
-                .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
-                .opacity(isAnimatingSpecial ? 0.6 : 1.0)
-                .frame(width: size * CGFloat(radius) * 0.8, height: size * CGFloat(radius) * 0.8)
+            ZStack {
+                // Area clearer glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.orange.opacity(0.6), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size * CGFloat(radius) * 0.6
+                        )
+                    )
+                    .frame(width: size * CGFloat(radius) * 1.2, height: size * CGFloat(radius) * 1.2)
+                    .scaleEffect(isAnimatingSpecial ? 1.4 : 1.0)
+                    .opacity(isAnimatingSpecial ? 0.7 : 0.4)
+                
+                // Area clearer border
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.orange, Color.yellow, Color.orange],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+                    .frame(width: size * CGFloat(radius) * 0.9, height: size * CGFloat(radius) * 0.9)
+                    .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
+                    .opacity(isAnimatingSpecial ? 0.8 : 1.0)
+                
+                // Area clearer icon
+                Image(systemName: "burst")
+                    .font(.system(size: size * 0.25, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
+                    .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+            }
                 
         case .multiplier:
-            Circle()
-                .stroke(Color.yellow, lineWidth: 3)
-                .scaleEffect(isAnimatingSpecial ? 1.1 : 1.0)
-                .opacity(isAnimatingSpecial ? 0.8 : 1.0)
-                .frame(width: size * 0.9, height: size * 0.9)
-                .overlay(
-                    Text("×2")
-                        .font(.system(size: size * 0.25, weight: .bold))
-                        .foregroundColor(.yellow)
-                        .opacity(isAnimatingSpecial ? 0.9 : 0.7)
-                )
+            ZStack {
+                // Multiplier glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.yellow.opacity(0.6), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size * 0.6
+                        )
+                    )
+                    .frame(width: size * 1.2, height: size * 1.2)
+                    .scaleEffect(isAnimatingSpecial ? 1.3 : 1.0)
+                    .opacity(isAnimatingSpecial ? 0.8 : 0.4)
+                
+                // Multiplier border
+                RoundedRectangle(cornerRadius: size * 0.15)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.yellow, Color.orange, Color.yellow],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 3
+                    )
+                    .frame(width: size * 0.95, height: size * 0.95)
+                    .scaleEffect(isAnimatingSpecial ? 1.1 : 1.0)
+                    .opacity(isAnimatingSpecial ? 0.8 : 1.0)
+                
+                // Multiplier text
+                Text("×2")
+                    .font(.system(size: size * 0.25, weight: .black, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.yellow, Color.white],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: .black.opacity(0.7), radius: 1, x: 0, y: 1)
+                    .scaleEffect(isAnimatingSpecial ? 1.2 : 1.0)
+            }
         }
     }
     

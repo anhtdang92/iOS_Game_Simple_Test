@@ -1,0 +1,463 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.ArcaneAnvil-x86_64-apple-macosx16.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/sources",
+      "importPath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/AchievementManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/ArcaneAnvilApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/DailyChallengeManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/EnchantmentCard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameBoard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/HapticManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/PersistenceManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/Rune.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/SoundManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/TutorialManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "ArcaneAnvil",
+      "moduleOutputPath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/Modules/ArcaneAnvil.swiftmodule",
+      "objects" : [
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/AchievementManager.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/ArcaneAnvilApp.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/DailyChallengeManager.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/EnchantmentCard.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameBoard.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameManager.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameView.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/HapticManager.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/PersistenceManager.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/Rune.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/SoundManager.swift.o",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/TutorialManager.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx10.13",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "ArcaneAnvil_main",
+        "-color-diagnostics",
+        "-swift-version",
+        "5",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "ios_game_simple_test"
+      ],
+      "outputFileMapPath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/AchievementManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/ArcaneAnvilApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/DailyChallengeManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/EnchantmentCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameBoard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/HapticManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/PersistenceManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/Rune.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/SoundManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/TutorialManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/Modules/ArcaneAnvil.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/AchievementManager.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/ArcaneAnvilApp.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/DailyChallengeManager.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/EnchantmentCard.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameBoard.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameManager.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameView.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/HapticManager.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/PersistenceManager.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/Rune.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/SoundManager.swift",
+        "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/TutorialManager.swift"
+      ],
+      "tempsPath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "ArcaneAnvil" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ArcaneAnvil",
+      "-package-name",
+      "ios_game_simple_test",
+      "-incremental",
+      "-c",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/AchievementManager.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/ArcaneAnvilApp.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/DailyChallengeManager.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/EnchantmentCard.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameBoard.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameManager.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameView.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/HapticManager.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/PersistenceManager.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/Rune.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/SoundManager.swift",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/TutorialManager.swift",
+      "-I",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/Modules",
+      "-target",
+      "x86_64-apple-macosx10.13",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "ArcaneAnvil_main",
+      "-color-diagnostics",
+      "-swift-version",
+      "5",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "ios_game_simple_test",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ArcaneAnvil" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "enableAllTraits" : false
+  },
+  "writeCommands" : {
+    "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil-entitlement.plist"
+    },
+    "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/AchievementManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/ArcaneAnvilApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/DailyChallengeManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/EnchantmentCard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameBoard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/GameView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/HapticManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/PersistenceManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/Rune.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/SoundManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/Sources/ArcaneAnvil/TutorialManager.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/sources"
+    },
+    "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/AchievementManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/ArcaneAnvilApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/DailyChallengeManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/EnchantmentCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameBoard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/GameView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/HapticManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/PersistenceManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/Rune.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/SoundManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.build/TutorialManager.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/ArcaneAnvil.product/Objects.LinkFileList"
+    },
+    "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/anhdang/Documents/GitHub/iOS_Game_Simple_Test/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
